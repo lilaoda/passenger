@@ -1,12 +1,7 @@
 package bus.passenger.module.splash;
 
-import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.annotation.Nullable;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
@@ -16,7 +11,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 
@@ -28,6 +22,7 @@ import bus.passenger.base.BaseApplication;
 import bus.passenger.data.SpManager;
 import bus.passenger.module.DaggerCommonComponent;
 import bus.passenger.module.main.MainActivity;
+import bus.passenger.service.LocationService;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import lhy.lhylibrary.utils.StatusBarUtil;
@@ -43,8 +38,6 @@ public class SplashActivity extends BaseActivity implements View.OnClickListener
     SpManager mSpManager;
 
     private ArrayList<View> list;
-    private String mVersionName;
-    private int mVersionCode;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -55,84 +48,19 @@ public class SplashActivity extends BaseActivity implements View.OnClickListener
             finish();
             return;
         }
-
         setContentView(R.layout.activity_splash);
         ButterKnife.bind(this);
         DaggerCommonComponent.builder().applicationComponent(BaseApplication.getApplicationComponent()).build().inject(this);
-
+        startService(new Intent(this, LocationService.class).putExtra(LocationService.FIRST_LOCATE,true));
         boolean isStarted = mSpManager.getBoolean(SpManager.IS_STARTED);
         if (!isStarted) {
             initView();
-            initData();
         } else {
             startActivity(new Intent(this, MainActivity.class));
             finish();
         }
     }
 
-
-    private void initData() {
-        mVersionName = getVersionName();
-        mVersionCode = getVersionCode();
-    }
-
-    private String getVersionName() {
-        PackageManager pm = getPackageManager();
-        try {
-            PackageInfo packageInfo = pm.getPackageInfo(getPackageName(), 0);
-            String versionName = packageInfo.versionName;
-            return versionName;
-        } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
-        }
-        return "";
-    }
-
-    private int getVersionCode() {
-        PackageManager pm = getPackageManager();
-        try {
-            PackageInfo packageInfo = pm.getPackageInfo(getPackageName(), 0);
-            int versionCode = packageInfo.versionCode;
-            return versionCode;
-        } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
-        }
-        return -1;
-    }
-
-    protected void showUpdateDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);// 这里必须传一个activity对象
-        builder.setTitle("发现新版本:" + mVersionName);
-        builder.setMessage("这是新版本啊啊啊");
-        builder.setPositiveButton("立即更新",
-                new DialogInterface.OnClickListener() {
-
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        downloadApk();
-                    }
-                });
-        builder.setNegativeButton("以后再说",
-                new DialogInterface.OnClickListener() {
-
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                });
-        builder.show();
-    }
-
-    private void downloadApk() {
-        if (Environment.getExternalStorageState().equals(
-                Environment.MEDIA_MOUNTED)) {
-            String path = Environment.getExternalStorageDirectory()
-                    .getAbsolutePath() + "/waqudao.apk";
-            // 开始下载
-        } else {
-            Toast.makeText(this, "没有找到sdcard!", Toast.LENGTH_SHORT).show();
-        }
-    }
 
     private void initView() {
         View startView = LayoutInflater.from(this).inflate(R.layout.indicator_start, null);

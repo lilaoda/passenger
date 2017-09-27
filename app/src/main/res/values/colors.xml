@@ -17,5 +17,6 @@
     <color name="item_bg_gray_dark">#e4e3e3</color>
     <color name="black_narmal">#231f1f</color>
     <color name="black_press">#1b1919</color>
+    <color name="common_statusbar_color">#b3b1b1</color>
 
 </resources>

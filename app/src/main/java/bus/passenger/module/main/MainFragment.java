@@ -19,11 +19,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.amap.api.maps.AMap;
+import com.amap.api.maps.AMapOptions;
 import com.amap.api.maps.CameraUpdate;
 import com.amap.api.maps.CameraUpdateFactory;
 import com.amap.api.maps.LocationSource;
@@ -44,6 +46,11 @@ import com.amap.api.services.route.DriveRouteResult;
 import com.amap.api.services.route.RideRouteResult;
 import com.amap.api.services.route.RouteSearch;
 import com.amap.api.services.route.WalkRouteResult;
+import com.orhanobut.logger.Logger;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
@@ -53,19 +60,23 @@ import javax.inject.Inject;
 import bus.passenger.R;
 import bus.passenger.base.BaseApplication;
 import bus.passenger.bean.PoiInfo;
+import bus.passenger.bean.event.LocationResultEvent;
+import bus.passenger.bean.event.StartLocationEvent;
 import bus.passenger.data.AMapManager;
 import bus.passenger.module.AMapFragment;
 import bus.passenger.module.DaggerCommonComponent;
 import bus.passenger.overlay.AMapUtil;
 import bus.passenger.overlay.DrivingRouteOverlay;
+import bus.passenger.service.LocationService;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import butterknife.Unbinder;
 import io.reactivex.Observable;
 import lhy.lhylibrary.http.ObserverResult;
+import lhy.lhylibrary.utils.CommonUtils;
 import lhy.lhylibrary.utils.ImageFactory;
 import lhy.lhylibrary.utils.ToastUtils;
-import lhy.lhylibrary.utils.CommonUtils;
 import lhy.lhylibrary.view.tablayout.SegmentTabLayout;
 import lhy.lhylibrary.view.tablayout.listener.OnTabSelectListener;
 
@@ -86,10 +97,12 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
     public static final int ZOOM_SCALE_VALUE = 15;
     //定位时间间隔
     public static final int INTERVAL_lOCATION = 3000;
+    //页面的三种状态
+    private static final int STATUS_SELECT_ADDRESS = 1;//正在选择起始或终点地址
+    private static final int STATUS_READY_CALL = 2;//已选好地址，还没点击叫车
+    private static final int STATUS_IS_CALLING = 3;//正在叫车中
+    private int mCurrentStatus = 1;//目前的页面状态
 
-
-    @BindView(R.id.mapView)
-    TextureMapView mapView;
     @BindView(R.id.text_start)
     TextView textStart;
     @BindView(R.id.text_end)
@@ -108,26 +121,29 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
     LinearLayout llResult;
     @BindView(R.id.line)
     View line;
+    @BindView(R.id.ll_call_car)
+    LinearLayout llCallCar;
+    @BindView(R.id.btn_cancel)
+    Button btnCancel;
+    @BindView(R.id.fl_root)
+    FrameLayout flRoot;
+    TextureMapView mapView;
 
     @Inject
     AMapManager mAMapManager;
-    @Inject
-    PoiInfo mLocatedPoiInfo;//地图定位的用户位置(不为空)
+
     PoiInfo mStartPoiInfo;//用户当前选择的起始位置
     PoiInfo mTargetPoiInfo;//用户当前选择的目的位置
-
-
     private AMap mAMap;
     private Marker mScreenMarker;
     private BottomSheetDialog bottomSheetDialog;
-    private String[] mTitles = {"现在", "预约"};
-
-    /**
-     * 移动地图中心点时，是否需要定位 （用于定位超始地点），当起点终点都定位完成时，应该改为false
-     */
-    private boolean isNeedLocation = true;
-    private int mTextTimeHeight;
     private MyLocationStyle mMyLocationStyle;
+    private Unbinder mUnbinder;
+
+    private String[] mTitles = {"现在", "预约"};
+    private boolean isNeedLocation = true;//是否根据经纬度查询POI
+    private int mTextTimeHeight;
+
 
     public static MainFragment newInstance() {
         Bundle args = new Bundle();
@@ -139,37 +155,47 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EventBus.getDefault().register(this);
         DaggerCommonComponent.builder().applicationComponent(BaseApplication.getApplicationComponent()).build().inject(this);
     }
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.fragment_main, null);
-        ButterKnife.bind(this, rootView);
-        mapView.onCreate(savedInstanceState);
+        Logger.d("oncreateView");
+        View mRootView = inflater.inflate(R.layout.fragment_main, null);
+        mUnbinder = ButterKnife.bind(this, mRootView);
+        addMapView(savedInstanceState);
         initView();
         initMap();
         initLocation();
-        return rootView;
+        return mRootView;
+    }
+
+    private void addMapView(@Nullable Bundle savedInstanceState) {
+        LatLng centerMyPoint = new LatLng(LocationService.latitude, LocationService.longitude);
+        AMapOptions mapOptions = new AMapOptions();
+        mapOptions.camera(new CameraPosition(centerMyPoint, ZOOM_SCALE_VALUE, 0, 0));
+        mapView = new TextureMapView(getContext(), mapOptions);
+        flRoot.addView(mapView, 0, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        mapView.onCreate(savedInstanceState);
     }
 
 
     private void initView() {
-        btnCommit.setVisibility(View.GONE);
+        setViewStatus(STATUS_SELECT_ADDRESS);
         mTextTimeHeight = textTime.getLayoutParams().height;
         textTime.getLayoutParams().height = 0;
         textTime.requestLayout();
-
         textStart.setText(getString(R.string.is_locationing));
         tabLayout.setTabData(mTitles);
         tabLayout.setOnTabSelectListener(new OnTabSelectListener() {
             @Override
             public void onTabSelect(int position) {
                 if (position == 1) {
-                    showTextTime(true);
+                    showTimeTextView(true);
                 } else {
-                    showTextTime(false);
+                    showTimeTextView(false);
                 }
             }
 
@@ -180,7 +206,35 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
         });
     }
 
-    private void showTextTime(boolean b) {
+    private void setViewStatus(int status) {
+        mCurrentStatus = status;
+        switch (status) {
+            case STATUS_SELECT_ADDRESS:
+                llAddress.setVisibility(View.VISIBLE);
+                llResult.setVisibility(View.GONE);
+                textResult.setText("");
+                textEnd.setText("");
+                btnCommit.setVisibility(View.GONE);
+                llCallCar.setVisibility(View.VISIBLE);
+                btnCancel.setVisibility(View.GONE);
+                btnCommit.setVisibility(View.GONE);
+                break;
+            case STATUS_READY_CALL:
+                resetToolBar();
+                llAddress.setVisibility(View.GONE);
+                btnCancel.setVisibility(View.GONE);
+                llCallCar.setVisibility(View.VISIBLE);
+                llResult.setVisibility(View.VISIBLE);
+                btnCommit.setVisibility(View.VISIBLE);
+                break;
+            case STATUS_IS_CALLING:
+                llCallCar.setVisibility(View.GONE);
+                btnCancel.setVisibility(View.VISIBLE);
+                break;
+        }
+    }
+
+    private void showTimeTextView(boolean b) {
         ValueAnimator valueAnimator;
         if (b) {
             valueAnimator = ValueAnimator.ofInt(0, mTextTimeHeight);
@@ -227,9 +281,9 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
         mMyLocationStyle.strokeWidth(0F);
         mMyLocationStyle.radiusFillColor(getResources().getColor(android.R.color.transparent));
         mMyLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_LOCATE);
-//        mMyLocationStyle.interval(INTERVAL_lOCATION);
         mMyLocationStyle.showMyLocation(true);
-        mAMap.animateCamera(CameraUpdateFactory.zoomTo(ZOOM_SCALE_VALUE));
+//        mAMap.animateCamera(CameraUpdateFactory.zoomTo(ZOOM_SCALE_VALUE));
+        moveMapToCurrentLocation();
         mAMap.setMyLocationStyle(mMyLocationStyle);
         mAMap.setMyLocationEnabled(true);// 设置为true表示启动显示定位蓝点，false表示隐藏定位蓝点并不进行定位，默认是false。
         mAMap.getUiSettings().setMyLocationButtonEnabled(false);//设置默认定位按钮是否显示，非必需设置。
@@ -248,10 +302,6 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
                 });
     }
 
-
-    /**
-     * 在屏幕中心添加一个Marker
-     */
     private void addMarkerInScreenCenter() {
         LatLng latLng = mAMap.getCameraPosition().target;
         Point screenPosition = mAMap.getProjection().toScreenLocation(latLng);
@@ -261,7 +311,6 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
         //设置Marker在屏幕上,不跟随地图移动
         mScreenMarker.setPositionByPixels(screenPosition.x, screenPosition.y);
     }
-
 
     @Override
     public void onPOIClick(Poi poi) {
@@ -278,7 +327,7 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
         mAMap.addMarker(markOptiopns);
     }
 
-    @OnClick({R.id.text_start, R.id.text_end, R.id.ibtn_refresh, R.id.btn_commit})
+    @OnClick({R.id.text_start, R.id.text_end, R.id.ibtn_refresh, R.id.btn_commit, R.id.btn_cancel})
     public void onViewClicked(View view) {
         switch (view.getId()) {
             case R.id.text_start:
@@ -294,13 +343,24 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
                 showTimeDialog();
                 break;
             case R.id.btn_commit:
+                setViewStatus(STATUS_IS_CALLING);
                 callCar();
+                break;
+            case R.id.btn_cancel:
+                setViewStatus(STATUS_READY_CALL);
+                cancelCallCar();
                 break;
         }
     }
 
     private void callCar() {
+        llCallCar.setVisibility(View.GONE);
+        btnCancel.setVisibility(View.VISIBLE);
         ToastUtils.showString("呼叫转车");
+    }
+
+    private void cancelCallCar() {
+        ToastUtils.showString("取消订单");
     }
 
     private void showTimeDialog() {
@@ -314,12 +374,24 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
 
     //重新定位，移动到定位位置
     private void refreshLocation() {
-        if (mLocatedPoiInfo != null) {
-            CameraUpdate cameraUpate = CameraUpdateFactory.newLatLngZoom(new LatLng(mLocatedPoiInfo.getLatitude(), mLocatedPoiInfo.getLongitude()), ZOOM_SCALE_VALUE);
-            mAMap.animateCamera(cameraUpate);
+        StartLocationEvent event = new StartLocationEvent(true, true);
+        EventBus.getDefault().post(event);
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMessageEvent(LocationResultEvent event) {
+        EventBus.getDefault().post(new StartLocationEvent(false));
+        if (event.isLocationSuccess()) {
+            moveMapToCurrentLocation();
+        } else {
+            ToastUtils.showString(event.getErrorInfo());
         }
     }
 
+    private void moveMapToCurrentLocation() {
+        CameraUpdate cameraUpate = CameraUpdateFactory.newLatLngZoom(new LatLng(LocationService.latitude, LocationService.longitude), ZOOM_SCALE_VALUE);
+        mAMap.animateCamera(cameraUpate);
+    }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -342,8 +414,9 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
         } else if (requestCode == REQUEST_CITY_END) {
             isNeedLocation = false;
             mTargetPoiInfo = poiInfo;
+            setViewStatus(STATUS_READY_CALL);
             textEnd.setText(mTargetPoiInfo.getTitle());
-            showResultView();
+            textResult.setText("共计60大洋");
             setTargetMarker();
         }
     }
@@ -394,7 +467,6 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
 
         LatLngBounds lngBounds = new LatLngBounds.Builder()
                 .include(new LatLng(mTargetPoiInfo.getLatitude(), mTargetPoiInfo.getLongitude()))
-                //   .include(new LatLng(mLocatedPoiInfo.getLatitude(), mLocatedPoiInfo.getLongitude()))
                 .include(new LatLng(mStartPoiInfo.getLatitude(), mStartPoiInfo.getLongitude()))
                 .build();
         int bottom = CommonUtils.dp2px(getContext(), 200);
@@ -406,17 +478,6 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
         //  addMarkerInScreenCenter();
     }
 
-    private void showResultView() {
-        resetToolBar();
-        llAddress.setVisibility(View.GONE);
-        llResult.setVisibility(View.VISIBLE);
-        btnCommit.setVisibility(View.VISIBLE);
-    }
-
-    private void resetToolBar() {
-        MainActivity activity = (MainActivity) getActivity();
-        activity.updateDrawerToggle(false);
-    }
 
     private void showBuottomDialog() {
         if (bottomSheetDialog == null) {
@@ -521,8 +582,6 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
 
     @Override
     public void onMyLocationChange(Location location) {
-        mLocatedPoiInfo.setLatitude(location.getLatitude());
-        mLocatedPoiInfo.setLongitude(location.getLongitude());
     }
 
     /**
@@ -558,28 +617,36 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
     @Override
     public void onDestroy() {
         super.onDestroy();
+        EventBus.getDefault().unregister(this);
         mapView.onDestroy();
     }
 
     //点返回键时调用
     public void refreshView() {
-        mAMap.clear();
-        mAMap.setMyLocationStyle(mMyLocationStyle);//重新显示定位蓝点
-        addMarkerInScreenCenter();
+        if (mCurrentStatus==STATUS_IS_CALLING){
+            setViewStatus(STATUS_READY_CALL);
+        }else if(mCurrentStatus==STATUS_READY_CALL){
+            setViewStatus(STATUS_SELECT_ADDRESS);
+            isNeedLocation = true;
+            mTargetPoiInfo = null;
+            mAMap.clear();
+            mAMap.setMyLocationStyle(mMyLocationStyle);//重新显示定位蓝点
+            addMarkerInScreenCenter();
 
-        wrapAsync(Observable.timer(500, TimeUnit.MILLISECONDS)).subscribe(new ObserverResult<Long>() {
-            @Override
-            public void onSuccess(Long value) {
-                refreshLocation();
-            }
-        });
-        llAddress.setVisibility(View.VISIBLE);
-        llResult.setVisibility(View.GONE);
-        textResult.setText("");
-        textEnd.setText("");
-        btnCommit.setVisibility(View.GONE);
-        isNeedLocation = true;
-        mTargetPoiInfo = null;
+            wrapAsync(Observable.timer(500, TimeUnit.MILLISECONDS)).subscribe(new ObserverResult<Long>() {
+                @Override
+                public void onSuccess(Long value) {
+                    moveMapToCurrentLocation();
+                }
+            });
+        }else {
+            getActivity().onBackPressed();
+        }
+    }
+
+    private void resetToolBar() {
+        MainActivity activity = (MainActivity) getActivity();
+        activity.updateDrawerToggle(false);
     }
 
     private OnLocationChangedListener mOnLocationChangedListener;
@@ -592,5 +659,12 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
     @Override
     public void deactivate() {
         mOnLocationChangedListener = null;
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        mUnbinder.unbind();
+        Logger.d("onDestroyView");
     }
 }

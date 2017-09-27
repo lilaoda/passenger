@@ -1,6 +1,7 @@
 package bus.passenger.base;
 
 import com.liulishuo.filedownloader.FileDownloader;
+import com.squareup.leakcanary.LeakCanary;
 
 import lhy.lhylibrary.base.LhyApplication;
 
@@ -17,8 +18,17 @@ public class BaseApplication extends LhyApplication {
     public void onCreate() {
         super.onCreate();
         applicationComponent = DaggerApplicationComponent.builder().applicationModule(new ApplicationModule(this)).build();
+        initLeakCanary();
         FileDownloader.setup(this);
     }
+
+    private void initLeakCanary() {
+        if (LeakCanary.isInAnalyzerProcess(this)) {
+            return;
+        }
+        LeakCanary.install(this);
+    }
+
 
     public static ApplicationComponent getApplicationComponent() {
         return applicationComponent;

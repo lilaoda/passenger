@@ -30,21 +30,15 @@
         android:theme="@style/AppTheme">
         <activity
             android:name=".module.main.MainActivity"
-            android:launchMode="singleTask">
-            <!--<intent-filter>-->
-            <!--<action android:name="android.intent.action.MAIN" />-->
-
-            <!--<category android:name="android.intent.category.LAUNCHER" />-->
-            <!--</intent-filter>-->
-        </activity>
-        <activity android:name=".module.login.LoginActivity">
+            android:launchMode="singleTask" />
+        <activity android:name=".module.login.LoginActivity" />
+        <activity android:name=".module.splash.SplashActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".module.splash.SplashActivity" />
         <activity android:name=".module.main.SearchAddressActivity" />
         <activity android:name=".module.login.RegisterActivity" />
         <activity android:name=".module.setting.SettingActivity" />
@@ -54,6 +48,8 @@
 
         <!--高德地图-->
         <service android:name="com.amap.api.location.APSService" />
+        <service android:name=".service.LocationService" />
+
         <meta-data
             android:name="com.amap.api.v2.apikey"
             android:value="44ef67abb646840e07c77d9040726ffa" />

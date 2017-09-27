@@ -10,7 +10,6 @@ import android.text.TextUtils;
 
 import com.orhanobut.logger.LogLevel;
 import com.orhanobut.logger.Logger;
-import com.squareup.leakcanary.LeakCanary;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -29,9 +28,8 @@ public class LhyApplication extends Application {
     public void onCreate() {
         super.onCreate();
         instance = this;
-        context=getApplicationContext();
-       // AppCrashException.init();
-        initLeakCanary();
+        context = getApplicationContext();
+        // AppCrashException.init();
         initLogger();
     }
 
@@ -41,13 +39,6 @@ public class LhyApplication extends Application {
 //                .hideThreadInfo()
                 .logLevel(LogLevel.FULL)
                 .methodOffset(5);
-    }
-
-    private void initLeakCanary() {
-        if (LeakCanary.isInAnalyzerProcess(this)) {
-            return;
-        }
-        LeakCanary.install(this);
     }
 
     public void addActivity(AppCompatActivity activity) {
@@ -108,7 +99,7 @@ public class LhyApplication extends Application {
         return instance;
     }
 
-    public static Context getContext () {
+    public static Context getContext() {
         return context;
     }
 }

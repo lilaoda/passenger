@@ -90,9 +90,9 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
         View headerView = navView.getHeaderView(0);
         ImageView userIcon = (ImageView) headerView.findViewById(R.id.img_photo);
         TextView userName = (TextView) headerView.findViewById(R.id.text_name);
-        if(user==null){
+        if (user == null) {
             userName.setText("请登陆");
-        }else {
+        } else {
             Glide.with(this).load(user.getIconUrl()).into(userIcon);
         }
     }

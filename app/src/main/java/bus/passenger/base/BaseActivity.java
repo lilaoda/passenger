@@ -8,6 +8,7 @@ import android.widget.TextView;
 
 import bus.passenger.R;
 import lhy.lhylibrary.base.LhyActivity;
+import lhy.lhylibrary.utils.StatusBarUtil;
 
 /**
  * Created by Liheyu on 2017/9/20.
@@ -21,7 +22,6 @@ public class BaseActivity extends LhyActivity {
         super.onCreate(savedInstanceState);
     }
 
-    @Override
     protected void initToolbar(String title) {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         TextView textTitle = (TextView) findViewById(R.id.toolbar_title);
@@ -38,5 +38,10 @@ public class BaseActivity extends LhyActivity {
                 onBackPressed();
             }
         });
+    }
+
+    @Override
+    public void setStatusBar() {
+        StatusBarUtil.setColor(this, getResources().getColor(R.color.common_statusbar_color), 0);
     }
 }

@@ -414,6 +414,7 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
         } else if (requestCode == REQUEST_CITY_END) {
             isNeedLocation = false;
             mTargetPoiInfo = poiInfo;
+            Logger.d(mTargetPoiInfo);
             setViewStatus(STATUS_READY_CALL);
             textEnd.setText(mTargetPoiInfo.getTitle());
             textResult.setText("共计60大洋");
@@ -665,6 +666,5 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
     public void onDestroyView() {
         super.onDestroyView();
         mUnbinder.unbind();
-        Logger.d("onDestroyView");
     }
 }

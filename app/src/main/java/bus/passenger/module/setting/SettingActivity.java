@@ -18,14 +18,11 @@ import com.orhanobut.logger.Logger;
 
 import java.util.concurrent.TimeUnit;
 
-import javax.inject.Inject;
-
 import bus.passenger.R;
 import bus.passenger.base.BaseActivity;
 import bus.passenger.base.BaseApplication;
 import bus.passenger.base.GlobeConstants;
 import bus.passenger.data.DbManager;
-import bus.passenger.module.DaggerCommonComponent;
 import bus.passenger.module.login.LoginActivity;
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -35,10 +32,10 @@ import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.annotations.NonNull;
 import lhy.lhylibrary.http.ObserverResult;
+import lhy.lhylibrary.utils.CommonUtils;
 import lhy.lhylibrary.utils.FileUtils;
 import lhy.lhylibrary.utils.GlideCacheUtils;
 import lhy.lhylibrary.utils.ToastUtils;
-import lhy.lhylibrary.utils.CommonUtils;
 
 import static lhy.lhylibrary.utils.RxUtils.wrapAsync;
 
@@ -56,7 +53,6 @@ public class SettingActivity extends BaseActivity {
     @BindView(R.id.switch_msg)
     Switch switchMsg;
 
-    @Inject
     DbManager mDbManager;
     @BindView(R.id.text_call)
     TextView textCall;
@@ -69,7 +65,7 @@ public class SettingActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_setting);
         ButterKnife.bind(this);
-        DaggerCommonComponent.builder().applicationComponent(BaseApplication.getApplicationComponent()).build().inject(this);
+        mDbManager = DbManager.instance();
         initToolbar("设置");
         initView();
     }

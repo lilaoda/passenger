@@ -14,13 +14,9 @@ import android.widget.ImageView;
 
 import java.util.ArrayList;
 
-import javax.inject.Inject;
-
 import bus.passenger.R;
 import bus.passenger.base.BaseActivity;
-import bus.passenger.base.BaseApplication;
 import bus.passenger.data.SpManager;
-import bus.passenger.module.DaggerCommonComponent;
 import bus.passenger.module.main.MainActivity;
 import bus.passenger.service.LocationService;
 import butterknife.BindView;
@@ -34,8 +30,6 @@ public class SplashActivity extends BaseActivity implements View.OnClickListener
     ViewPager viewPager;
     @BindView(R.id.fl_root)
     FrameLayout flRoot;
-    @Inject
-    SpManager mSpManager;
 
     private ArrayList<View> list;
 
@@ -50,9 +44,8 @@ public class SplashActivity extends BaseActivity implements View.OnClickListener
         }
         setContentView(R.layout.activity_splash);
         ButterKnife.bind(this);
-        DaggerCommonComponent.builder().applicationComponent(BaseApplication.getApplicationComponent()).build().inject(this);
         startService(new Intent(this, LocationService.class).putExtra(LocationService.FIRST_LOCATE,true));
-        boolean isStarted = mSpManager.getBoolean(SpManager.IS_STARTED);
+        boolean isStarted = SpManager.instance().getBoolean(SpManager.IS_STARTED);
         if (!isStarted) {
             initView();
         } else {
@@ -78,7 +71,7 @@ public class SplashActivity extends BaseActivity implements View.OnClickListener
     @Override
     public void onClick(View v) {
         if (v.getId() == R.id.btn_start) {
-            mSpManager.putBoolean(SpManager.IS_STARTED, true);
+            SpManager.instance().putBoolean(SpManager.IS_STARTED, true);
             startActivity(new Intent(this, MainActivity.class));
             finish();
         }

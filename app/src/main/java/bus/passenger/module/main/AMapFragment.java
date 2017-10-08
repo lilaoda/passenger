@@ -1,4 +1,4 @@
-package bus.passenger.module;
+package bus.passenger.module.main;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -48,7 +48,7 @@ public class AMapFragment extends LhyFragment implements  AMap.OnPOIClickListene
     /**
      * 添加一个从地上生长的Marker
      */
-    public void addGrowMarker(AMap aMap,LatLng latLng) {
+    public void addGrowMarker(AMap aMap, LatLng latLng) {
         if (mGrowMarker == null) {
             MarkerOptions markerOptions = new MarkerOptions().icon(BitmapDescriptorFactory
                     .defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
@@ -68,7 +68,7 @@ public class AMapFragment extends LhyFragment implements  AMap.OnPOIClickListene
         }
     }
 
-    protected void startNavi(Poi start,Poi end,AmapNaviType naviType){
+    protected void startNavi(Poi start, Poi end, AmapNaviType naviType){
         AmapNaviParams amapNaviParams = new AmapNaviParams(start, null, end, naviType);
         AmapNaviPage.getInstance().showRouteActivity(getContext(), amapNaviParams, null);
     }

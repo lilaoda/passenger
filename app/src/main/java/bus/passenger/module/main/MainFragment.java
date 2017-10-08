@@ -55,16 +55,11 @@ import org.greenrobot.eventbus.ThreadMode;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
-import javax.inject.Inject;
-
 import bus.passenger.R;
-import bus.passenger.base.BaseApplication;
 import bus.passenger.bean.PoiInfo;
 import bus.passenger.bean.event.LocationResultEvent;
 import bus.passenger.bean.event.StartLocationEvent;
 import bus.passenger.data.AMapManager;
-import bus.passenger.module.AMapFragment;
-import bus.passenger.module.DaggerCommonComponent;
 import bus.passenger.overlay.AMapUtil;
 import bus.passenger.overlay.DrivingRouteOverlay;
 import bus.passenger.service.LocationService;
@@ -129,9 +124,6 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
     FrameLayout flRoot;
     TextureMapView mapView;
 
-    @Inject
-    AMapManager mAMapManager;
-
     PoiInfo mStartPoiInfo;//用户当前选择的起始位置
     PoiInfo mTargetPoiInfo;//用户当前选择的目的位置
     private AMap mAMap;
@@ -156,7 +148,6 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EventBus.getDefault().register(this);
-        DaggerCommonComponent.builder().applicationComponent(BaseApplication.getApplicationComponent()).build().inject(this);
     }
 
     @Nullable
@@ -291,7 +282,7 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
     }
 
     private void searchPoiInfo(LatLng target) {
-        wrapAsync(mAMapManager.search(target))
+        wrapAsync(AMapManager.instance().search(target))
                 .compose(this.<PoiInfo>bindToLifecycle())
                 .subscribe(new ObserverResult<PoiInfo>(true) {
                     @Override

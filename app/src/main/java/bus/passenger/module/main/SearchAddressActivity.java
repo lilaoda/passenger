@@ -18,15 +18,11 @@ import com.chad.library.adapter.base.BaseQuickAdapter;
 
 import java.util.List;
 
-import javax.inject.Inject;
-
 import bus.passenger.R;
 import bus.passenger.adapter.SearchAdapter;
-import bus.passenger.base.BaseApplication;
 import bus.passenger.bean.PoiInfo;
 import bus.passenger.data.AMapManager;
 import bus.passenger.data.SpManager;
-import bus.passenger.module.DaggerCommonComponent;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -63,10 +59,7 @@ public class SearchAddressActivity extends LhyActivity {
 
     List<PoiInfo> mHistoryList;
     private SearchAdapter mAdapter;
-
-    @Inject
     SpManager mSpManager;
-    @Inject
     AMapManager mAMapManager;
 
     @Override
@@ -74,10 +67,8 @@ public class SearchAddressActivity extends LhyActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search_address);
         ButterKnife.bind(this);
-        DaggerCommonComponent.builder()
-                .applicationComponent(BaseApplication.getApplicationComponent())
-                .build()
-                .inject(this);
+        mSpManager = SpManager.instance();
+        mAMapManager = AMapManager.instance();
         initView();
         intListener();
     }

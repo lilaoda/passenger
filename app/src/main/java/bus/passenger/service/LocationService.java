@@ -15,10 +15,6 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-
 import bus.passenger.bean.event.LocationResultEvent;
 import bus.passenger.bean.event.StartLocationEvent;
 
@@ -63,8 +59,10 @@ public class LocationService extends Service implements AMapLocationListener {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        isFirstLocate = intent.getBooleanExtra(FIRST_LOCATE, false);
-        if (mlocationClient != null) {
+        if (intent != null && intent.hasExtra(FIRST_LOCATE)) {
+            isFirstLocate = intent.getBooleanExtra(FIRST_LOCATE, false);
+        }
+        if (isFirstLocate && mlocationClient != null) {
             mlocationClient.startLocation();
         }
         return super.onStartCommand(intent, flags, startId);
@@ -99,31 +97,31 @@ public class LocationService extends Service implements AMapLocationListener {
     public void onLocationChanged(AMapLocation aMapLocation) {
         if (aMapLocation != null) {
             if (aMapLocation.getErrorCode() == 0) {
-                //定位成功回调信息，设置相关消息
-                aMapLocation.getLocationType();//获取当前定位结果来源，如网络定位结果，详见定位类型表
-                aMapLocation.getAccuracy();//获取精度信息
-                SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINA);
-                Date date = new Date(aMapLocation.getTime());
-                df.format(date);//定位时间
-                aMapLocation.getAddress();//地址，如果option中设置isNeedAddress为false，则没有此结果，网络定位结果中会有地址信息，GPS定位不返回地址信息。
-                aMapLocation.getCountry();//国家信息
-                aMapLocation.getProvince();//省信息
-                aMapLocation.getCity();//城市信息
-                aMapLocation.getDistrict();//城区信息
-                aMapLocation.getStreet();//街道信息
-                aMapLocation.getStreetNum();//街道门牌号信息
-                aMapLocation.getCityCode();//城市编码
-                aMapLocation.getAdCode();//地区编码
-                aMapLocation.getAoiName();//获取当前定位点的AOI信息
+//                //定位成功回调信息，设置相关消息
+//                aMapLocation.getLocationType();//获取当前定位结果来源，如网络定位结果，详见定位类型表
+//                aMapLocation.getAccuracy();//获取精度信息
+//                SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINA);
+//                Date date = new Date(aMapLocation.getTime());
+//                df.format(date);//定位时间
+//                aMapLocation.getAddress();//地址，如果option中设置isNeedAddress为false，则没有此结果，网络定位结果中会有地址信息，GPS定位不返回地址信息。
+//                aMapLocation.getCountry();//国家信息
+//                aMapLocation.getProvince();//省信息
+//                aMapLocation.getCity();//城市信息
+//                aMapLocation.getDistrict();//城区信息
+//                aMapLocation.getStreet();//街道信息
+//                aMapLocation.getStreetNum();//街道门牌号信息
+//                aMapLocation.getCityCode();//城市编码
+//                aMapLocation.getAdCode();//地区编码
+//                aMapLocation.getAoiName();//获取当前定位点的AOI信息
 
                 longitude = aMapLocation.getLongitude();
                 latitude = aMapLocation.getLatitude();
                 Log.d(TAG, "onLocationChanged: " + longitude + "_" + latitude + aMapLocation.getAoiName());
 
-                if (isFirstLocate) {
-                    isFirstLocate = false;
-                    mlocationClient.stopLocation();
-                }
+//                if (isFirstLocate) {
+//                    isFirstLocate = false;
+//                    mlocationClient.stopLocation();
+//                }
                 if (isNeedResult) {
                     EventBus.getDefault().post(new LocationResultEvent(true));
                     isNeedResult = false;
@@ -131,7 +129,7 @@ public class LocationService extends Service implements AMapLocationListener {
             } else {
                 if (isNeedResult) {
                     String errorInfo = "定位失败:" + aMapLocation.getErrorCode() + "," + aMapLocation.getErrorInfo();
-                    EventBus.getDefault().post(new LocationResultEvent(false,errorInfo));
+                    EventBus.getDefault().post(new LocationResultEvent(false, errorInfo));
                     isNeedResult = false;
                 }
 

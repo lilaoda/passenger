@@ -19,14 +19,10 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 
-import javax.inject.Inject;
-
 import bus.passenger.R;
 import bus.passenger.base.BaseActivity;
-import bus.passenger.base.BaseApplication;
 import bus.passenger.data.DbManager;
 import bus.passenger.data.entity.User;
-import bus.passenger.module.DaggerCommonComponent;
 import bus.passenger.module.customerservice.CustomerServiceActivity;
 import bus.passenger.module.route.RouteActivity;
 import bus.passenger.module.setting.SettingActivity;
@@ -45,7 +41,6 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
     @BindView(R.id.drawer_layout)
     DrawerLayout drawerLayout;
 
-    @Inject
     DbManager mDbManager;
 
     private MainFragment mMainFragment;
@@ -58,10 +53,7 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
         getWindow().requestFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
-        DaggerCommonComponent.builder()
-                .applicationComponent(BaseApplication.getApplicationComponent())
-                .build()
-                .inject(this);
+        mDbManager = DbManager.instance();
         initView();
         initContent();
     }

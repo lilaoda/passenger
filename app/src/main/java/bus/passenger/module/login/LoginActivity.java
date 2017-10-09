@@ -3,20 +3,27 @@ package bus.passenger.module.login;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.text.TextUtils;
 import android.view.View;
 import android.widget.EditText;
 
 import bus.passenger.R;
 import bus.passenger.base.BaseActivity;
+import bus.passenger.bean.LoginResult;
+import bus.passenger.bean.param.LoginParam;
+import bus.passenger.data.DbManager;
+import bus.passenger.data.HttpManager;
+import bus.passenger.data.entity.User;
 import bus.passenger.module.main.MainActivity;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import lhy.lhylibrary.http.ResultObserver;
+import lhy.lhylibrary.utils.CommonUtils;
 import lhy.lhylibrary.utils.StatusBarUtil;
 import lhy.lhylibrary.utils.ToastUtils;
-import lhy.lhylibrary.utils.CommonUtils;
 import lhy.lhylibrary.utils.ValidateUtils;
+
+import static bus.passenger.utils.RxUtils.wrapHttp;
 
 
 public class LoginActivity extends BaseActivity implements View.OnClickListener {
@@ -26,16 +33,30 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
     @BindView(R.id.edit_pwd)
     EditText editPwd;
 
+    private HttpManager mHttpManager;
+    private DbManager mDbManager;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         ButterKnife.bind(this);
+        initView();
     }
 
     @Override
     public void setStatusBar() {
         StatusBarUtil.setTransparentForImageView(this, null);
+    }
+
+    private void initView() {
+        mHttpManager = HttpManager.instance();
+        mDbManager = DbManager.instance();
+        User user = mDbManager.getUser();
+        if (user != null) {
+            editPhone.setText(user.getPhone());
+            editPwd.setText(user.getPassword());
+        }
     }
 
     @OnClick({R.id.btn_login, R.id.text_forget, R.id.btn_register, R.id.ib_back})
@@ -45,9 +66,8 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
                 finish();
                 break;
             case R.id.btn_login:
-                editPhone.setText("13922239152");
-                editPwd.setText("123456");
                 if (checkData()) {
+//                    startActivity(new Intent(this,MainActivity.class));
                     doSignin();
                 }
                 break;
@@ -60,12 +80,27 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
     }
 
     private void doSignin() {
-        if (TextUtils.equals(CommonUtils.getString(editPhone), "13922239152") && TextUtils.equals(CommonUtils.getString(editPwd), "123456")) {
-            startActivity(new Intent(this, MainActivity.class));
-        }else {
-            ToastUtils.showString("账号13922239152+\n密码123456");
-        }
+        LoginParam loginParam = new LoginParam();
+        loginParam.setAccountType("0");
+        loginParam.setUserName(CommonUtils.getString(editPhone));
+        loginParam.setPassword(CommonUtils.getString(editPwd));
+        wrapHttp(mHttpManager.getPassengerService().login(loginParam))
+                    .compose(this.<LoginResult>bindToLifecycle())
+                    .subscribe(new ResultObserver<LoginResult>(this, "正在登陆", true) {
+                        @Override
+                        public void onSuccess(LoginResult value) {
+                            saveUserInfo(value);
+                            startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                        }
+                    });
+    }
 
+    private void saveUserInfo(LoginResult value) {
+        User user = new User();
+        user.setPhone(CommonUtils.getString(editPhone));
+        user.setPassword(CommonUtils.getString(editPwd));
+        user.setToken(value.getToken());
+        mDbManager.saveUser(user);
     }
 
     private boolean checkData() {

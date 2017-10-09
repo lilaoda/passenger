@@ -1,6 +1,8 @@
-package lhy.lhylibrary.utils;
+package bus.passenger.utils;
 
 
+import bus.passenger.data.remote.HttpResult;
+import bus.passenger.data.remote.ResultFunction;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
@@ -16,5 +18,12 @@ public class RxUtils {
         return observable.subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
                 .subscribeOn(AndroidSchedulers.mainThread());
+    }
+
+    public static <T> Observable<T> wrapHttp(Observable<HttpResult<T>> observable) {
+        return observable.map(new ResultFunction<T>())
+                .subscribeOn(Schedulers.io())
+                .unsubscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
     }
 }

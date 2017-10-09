@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 import bus.passenger.R;
 import bus.passenger.base.BaseActivity;
 import bus.passenger.base.BaseApplication;
-import bus.passenger.base.GlobeConstants;
+import bus.passenger.base.PassengerConstants;
 import bus.passenger.data.DbManager;
 import bus.passenger.module.login.LoginActivity;
 import butterknife.BindView;
@@ -31,13 +31,13 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.annotations.NonNull;
-import lhy.lhylibrary.http.ObserverResult;
+import lhy.lhylibrary.http.ResultObserver;
 import lhy.lhylibrary.utils.CommonUtils;
 import lhy.lhylibrary.utils.FileUtils;
 import lhy.lhylibrary.utils.GlideCacheUtils;
 import lhy.lhylibrary.utils.ToastUtils;
 
-import static lhy.lhylibrary.utils.RxUtils.wrapAsync;
+import static bus.passenger.utils.RxUtils.wrapAsync;
 
 /**
  * 设置
@@ -91,7 +91,7 @@ public class SettingActivity extends BaseActivity {
 
     private void cleanCache() {
         wrapAsync(Observable.timer(1, TimeUnit.SECONDS)).compose(this.<Long>bindToLifecycle())
-                .subscribe(new ObserverResult<Long>(this, "正在清理缓存") {
+                .subscribe(new ResultObserver<Long>(this, "正在清理缓存") {
                     @Override
                     public void onSuccess(Long value) {
                         textClean.setText("0kb");
@@ -114,8 +114,8 @@ public class SettingActivity extends BaseActivity {
      */
     private void doCleanCache() {
         GlideCacheUtils.getInstance().clearAllImgCache(this);
-        FileUtils.deleteFolderFile(FileUtils.getExtraCacheFile(this, GlobeConstants.CACHE_FILE_NAME).getAbsolutePath(), false);
-        FileUtils.deleteFolderFile(FileUtils.getInternalCacheFile(this, GlobeConstants.CACHE_FILE_NAME).getAbsolutePath(), false);
+        FileUtils.deleteFolderFile(FileUtils.getExtraCacheFile(this, PassengerConstants.CACHE_FILE_NAME).getAbsolutePath(), false);
+        FileUtils.deleteFolderFile(FileUtils.getInternalCacheFile(this, PassengerConstants.CACHE_FILE_NAME).getAbsolutePath(), false);
     }
 
     /**
@@ -124,8 +124,8 @@ public class SettingActivity extends BaseActivity {
      * @return
      */
     private long getCacheSize() {
-        return FileUtils.getFolderSize(FileUtils.getInternalCacheFile(this, GlobeConstants.CACHE_FILE_NAME)) +
-                FileUtils.getFolderSize(FileUtils.getExtraCacheFile(this, GlobeConstants.CACHE_FILE_NAME)) +
+        return FileUtils.getFolderSize(FileUtils.getInternalCacheFile(this, PassengerConstants.CACHE_FILE_NAME)) +
+                FileUtils.getFolderSize(FileUtils.getExtraCacheFile(this, PassengerConstants.CACHE_FILE_NAME)) +
                 GlideCacheUtils.getInstance().getGlideCacheSize(this);
     }
 

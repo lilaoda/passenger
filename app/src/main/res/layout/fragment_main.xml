@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/fl_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:id="@+id/fl_root"
     android:orientation="vertical">
 
     <LinearLayout
@@ -20,13 +21,30 @@
             android:background="@null"
             android:src="@mipmap/btn_location" />
 
-        <Button
-            android:id="@+id/btn_cancel"
-            style="@style/ButtonBlack"
-            android:layout_gravity="center_horizontal"
-            android:layout_margin="10dp"
-            android:text="取消订单"
-            android:visibility="gone" />
+        <LinearLayout
+            android:id="@+id/ll_cancel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/text_begin_time"
+                android:layout_width="match_parent"
+                android:layout_marginRight="30dp"
+                android:layout_marginLeft="30dp"
+                android:layout_height="60dp"
+                android:background="@drawable/shape_circle_corner_graylight"
+                android:gravity="center"
+                android:textSize="16sp"/>
+
+            <Button
+                android:id="@+id/btn_cancel"
+                style="@style/ButtonBlack"
+                android:layout_gravity="center_horizontal"
+                android:layout_margin="10dp"
+                android:text="取消订单" />
+        </LinearLayout>
 
         <LinearLayout
             android:id="@+id/ll_call_car"
@@ -119,8 +137,8 @@
                         android:layout_height="80dp"
                         android:layout_gravity="bottom"
                         android:gravity="center"
-                        android:text="总共费用600块"
-                        android:textSize="16sp" />
+                        android:textSize="16sp"
+                        tools:text="总共费用600块" />
                 </LinearLayout>
             </LinearLayout>
 

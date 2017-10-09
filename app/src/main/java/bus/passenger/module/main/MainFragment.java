@@ -56,10 +56,14 @@ import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 import bus.passenger.R;
+import bus.passenger.base.PassengerConstants;
+import bus.passenger.bean.LoginResult;
 import bus.passenger.bean.PoiInfo;
 import bus.passenger.bean.event.LocationResultEvent;
 import bus.passenger.bean.event.StartLocationEvent;
+import bus.passenger.bean.param.CallCarParam;
 import bus.passenger.data.AMapManager;
+import bus.passenger.data.HttpManager;
 import bus.passenger.overlay.AMapUtil;
 import bus.passenger.overlay.DrivingRouteOverlay;
 import bus.passenger.service.LocationService;
@@ -68,14 +72,19 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 import butterknife.Unbinder;
 import io.reactivex.Observable;
-import lhy.lhylibrary.http.ObserverResult;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
+import lhy.lhylibrary.http.ResultObserver;
 import lhy.lhylibrary.utils.CommonUtils;
 import lhy.lhylibrary.utils.ImageFactory;
 import lhy.lhylibrary.utils.ToastUtils;
 import lhy.lhylibrary.view.tablayout.SegmentTabLayout;
 import lhy.lhylibrary.view.tablayout.listener.OnTabSelectListener;
 
-import static lhy.lhylibrary.utils.RxUtils.wrapAsync;
+import static bus.passenger.utils.RxUtils.wrapAsync;
+import static bus.passenger.utils.RxUtils.wrapHttp;
 
 /**
  * Created by Liheyu on 2017/9/12.
@@ -96,6 +105,10 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
     private static final int STATUS_SELECT_ADDRESS = 1;//正在选择起始或终点地址
     private static final int STATUS_READY_CALL = 2;//已选好地址，还没点击叫车
     private static final int STATUS_IS_CALLING = 3;//正在叫车中
+    @BindView(R.id.text_begin_time)
+    TextView textBeginTime;
+    @BindView(R.id.ll_cancel)
+    LinearLayout llCancel;
     private int mCurrentStatus = 1;//目前的页面状态
 
     @BindView(R.id.text_start)
@@ -135,6 +148,9 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
     private String[] mTitles = {"现在", "预约"};
     private boolean isNeedLocation = true;//是否根据经纬度查询POI
     private int mTextTimeHeight;
+    private HttpManager mHttpManager;
+    private AMapManager mAMapManager;
+    private Disposable mTimeDisposable;
 
 
     public static MainFragment newInstance() {
@@ -153,9 +169,10 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        Logger.d("oncreateView");
         View mRootView = inflater.inflate(R.layout.fragment_main, null);
         mUnbinder = ButterKnife.bind(this, mRootView);
+        mHttpManager = HttpManager.instance();
+        mAMapManager = AMapManager.instance();
         addMapView(savedInstanceState);
         initView();
         initMap();
@@ -207,20 +224,20 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
                 textEnd.setText("");
                 btnCommit.setVisibility(View.GONE);
                 llCallCar.setVisibility(View.VISIBLE);
-                btnCancel.setVisibility(View.GONE);
+                llCancel.setVisibility(View.GONE);
                 btnCommit.setVisibility(View.GONE);
                 break;
             case STATUS_READY_CALL:
                 resetToolBar();
                 llAddress.setVisibility(View.GONE);
-                btnCancel.setVisibility(View.GONE);
+                llCancel.setVisibility(View.GONE);
                 llCallCar.setVisibility(View.VISIBLE);
                 llResult.setVisibility(View.VISIBLE);
                 btnCommit.setVisibility(View.VISIBLE);
                 break;
             case STATUS_IS_CALLING:
                 llCallCar.setVisibility(View.GONE);
-                btnCancel.setVisibility(View.VISIBLE);
+                llCancel.setVisibility(View.VISIBLE);
                 break;
         }
     }
@@ -284,7 +301,7 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
     private void searchPoiInfo(LatLng target) {
         wrapAsync(AMapManager.instance().search(target))
                 .compose(this.<PoiInfo>bindToLifecycle())
-                .subscribe(new ObserverResult<PoiInfo>(true) {
+                .subscribe(new ResultObserver<PoiInfo>(true) {
                     @Override
                     public void onSuccess(PoiInfo value) {
                         mStartPoiInfo = value;
@@ -339,15 +356,60 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
                 break;
             case R.id.btn_cancel:
                 setViewStatus(STATUS_READY_CALL);
+                //移除下单计时器
+                if (mTimeDisposable != null && !mTimeDisposable.isDisposed()) {
+                    mTimeDisposable.dispose();
+                    textBeginTime.setText("");
+                }
                 cancelCallCar();
                 break;
         }
     }
 
     private void callCar() {
-        llCallCar.setVisibility(View.GONE);
-        btnCancel.setVisibility(View.VISIBLE);
-        ToastUtils.showString("呼叫转车");
+        CallCarParam callCarParam = new CallCarParam();
+        callCarParam.setCarType("0");//轿车类型 0默认
+        callCarParam.setMapType(PassengerConstants.MAP_TYPE_GAODE);
+        callCarParam.setSource(1);//来源全部为APP
+        callCarParam.setTypeTime(1);//第一期全部为实时订单
+        callCarParam.setDestAddress(mTargetPoiInfo.getTitle());
+        callCarParam.setDestLat(mTargetPoiInfo.getLatitude());
+        callCarParam.setDestLng(mTargetPoiInfo.getLongitude());
+        callCarParam.setOriginAddress(mStartPoiInfo.getTitle());
+        callCarParam.setOriginLat(mStartPoiInfo.getLatitude());
+        callCarParam.setOriginLng(mStartPoiInfo.getLongitude());
+        wrapHttp(mHttpManager.getPassengerService().callCar(callCarParam))
+                .compose(this.<LoginResult>bindToLifecycle())
+                .subscribe(new ResultObserver<LoginResult>(getActivity(),"正在下单...",true) {
+                    @Override
+                    public void onSuccess(LoginResult value) {
+                        //叫车成功
+                        updateTimer();
+                    }
+
+                    @Override
+                    public void onFailure(Throwable e) {
+                        super.onFailure(e);
+                        setViewStatus(STATUS_READY_CALL);
+                    }
+                });
+    }
+
+    //显示下单时间
+    private void updateTimer() {
+        mTimeDisposable = Observable.interval(1, TimeUnit.SECONDS, AndroidSchedulers.mainThread()).take(3600).map(new Function<Long, String>() {
+            @Override
+            public String apply(@io.reactivex.annotations.NonNull Long aLong) throws Exception {
+                int i = aLong.intValue();
+                return i / 60 + "分" + i % 60 + "秒";
+            }
+        }).subscribe(new Consumer<String>() {
+            @Override
+            public void accept(@io.reactivex.annotations.NonNull String s) throws Exception {
+                textBeginTime.setText(s);
+            }
+        });
+
     }
 
     private void cancelCallCar() {
@@ -457,17 +519,18 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
         optionses.add(getStartMarkerOptions());
         mAMap.addMarkers(optionses, false);
 
+        LatLng endLatLng = new LatLng(mTargetPoiInfo.getLatitude(), mTargetPoiInfo.getLongitude());
+        LatLng startLatLng = new LatLng(mStartPoiInfo.getLatitude(), mStartPoiInfo.getLongitude());
         LatLngBounds lngBounds = new LatLngBounds.Builder()
-                .include(new LatLng(mTargetPoiInfo.getLatitude(), mTargetPoiInfo.getLongitude()))
-                .include(new LatLng(mStartPoiInfo.getLatitude(), mStartPoiInfo.getLongitude()))
+                .include(endLatLng)
+                .include(startLatLng)
                 .build();
         int bottom = CommonUtils.dp2px(getContext(), 200);
         int padding = CommonUtils.dp2px(getContext(), 50);
         int top = CommonUtils.dp2px(getContext(), 75);
         mAMap.animateCamera(CameraUpdateFactory.newLatLngBoundsRect(lngBounds, padding, padding, top, bottom));//左右上下的PADDING
 //        mAMap.animateCamera(CameraUpdateFactory.newLatLngBounds(lngBounds,bottom,bottom,top));//宽高和PADDING
-        //    mAMapManager.routeCaculate(new LatLng(mLocation.getLatitude(), mLocation.getLongitude()), new LatLng(poiInfo.getLatitude(), poiInfo.getLongitude()), this);
-        //  addMarkerInScreenCenter();
+        mAMapManager.routeCaculate(startLatLng, endLatLng, this);
     }
 
 
@@ -615,9 +678,9 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
 
     //点返回键时调用
     public void refreshView() {
-        if (mCurrentStatus==STATUS_IS_CALLING){
+        if (mCurrentStatus == STATUS_IS_CALLING) {
             setViewStatus(STATUS_READY_CALL);
-        }else if(mCurrentStatus==STATUS_READY_CALL){
+        } else if (mCurrentStatus == STATUS_READY_CALL) {
             setViewStatus(STATUS_SELECT_ADDRESS);
             isNeedLocation = true;
             mTargetPoiInfo = null;
@@ -625,13 +688,13 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
             mAMap.setMyLocationStyle(mMyLocationStyle);//重新显示定位蓝点
             addMarkerInScreenCenter();
 
-            wrapAsync(Observable.timer(500, TimeUnit.MILLISECONDS)).subscribe(new ObserverResult<Long>() {
+            wrapAsync(Observable.timer(500, TimeUnit.MILLISECONDS)).subscribe(new ResultObserver<Long>() {
                 @Override
                 public void onSuccess(Long value) {
                     moveMapToCurrentLocation();
                 }
             });
-        }else {
+        } else {
             getActivity().onBackPressed();
         }
     }

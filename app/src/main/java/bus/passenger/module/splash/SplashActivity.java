@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import bus.passenger.R;
 import bus.passenger.base.BaseActivity;
 import bus.passenger.data.SpManager;
+import bus.passenger.module.login.LoginActivity;
 import bus.passenger.module.main.MainActivity;
 import bus.passenger.service.LocationService;
 import butterknife.BindView;
@@ -49,7 +50,7 @@ public class SplashActivity extends BaseActivity implements View.OnClickListener
         if (!isStarted) {
             initView();
         } else {
-            startActivity(new Intent(this, MainActivity.class));
+            startActivity(new Intent(this, LoginActivity.class));
             finish();
         }
     }
@@ -63,7 +64,7 @@ public class SplashActivity extends BaseActivity implements View.OnClickListener
         view1.setBackgroundResource(R.mipmap.login_bg);
 
         list = new ArrayList<>();
-        list.add(view1);
+     //   list.add(view1);
         list.add(startView);
         viewPager.setAdapter(new SplashAdapter());
     }

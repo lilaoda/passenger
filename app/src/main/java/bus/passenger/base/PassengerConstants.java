@@ -1,7 +1,7 @@
 package bus.passenger.base;
 
 
-public class GlobeConstants {
+public class PassengerConstants {
 
     public static final int STATUSBAR_ALPHA = 30;
 
@@ -21,6 +21,14 @@ public class GlobeConstants {
     public static final String sid = "sid";
     public static final String sign = "sign";
     public static final String timestamp = "timestamp";
+
+    /**
+     * 使用导航地图类型：0为高德、1百度、2谷歌、3其他
+     */
+    public static final int MAP_TYPE_GAODE = 0;
+    public static final int MAP_TYPE_BAIDU = 1;
+    public static final int MAP_TYPE_GOOGLE = 2;
+    public static final int MAP_TYPE_OTHER = 3;
 
 }
 

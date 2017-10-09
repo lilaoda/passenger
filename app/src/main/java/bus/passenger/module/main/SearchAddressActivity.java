@@ -27,11 +27,11 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import lhy.lhylibrary.base.LhyActivity;
-import lhy.lhylibrary.http.ObserverResult;
+import lhy.lhylibrary.http.ResultObserver;
 import lhy.lhylibrary.utils.CommonUtils;
 import lhy.lhylibrary.view.SideLetterBar;
 
-import static lhy.lhylibrary.utils.RxUtils.wrapAsync;
+import static bus.passenger.utils.RxUtils.wrapAsync;
 
 /**
  * Created by Liheyu on 2017/9/18.
@@ -164,7 +164,7 @@ public class SearchAddressActivity extends LhyActivity {
     private void queryAddress(String keyWord) {
         LlLoading.setVisibility(View.VISIBLE);
         recyclerView.setVisibility(View.GONE);
-        wrapAsync(mAMapManager.search(keyWord, "", "广州")).subscribe(new ObserverResult<List<PoiInfo>>() {
+        wrapAsync(mAMapManager.search(keyWord, "", "广州")).subscribe(new ResultObserver<List<PoiInfo>>() {
             @Override
             public void onSuccess(List<PoiInfo> value) {
                 LlLoading.setVisibility(View.GONE);

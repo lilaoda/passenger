@@ -30,15 +30,15 @@ public class HttpManager {
     private static final long CACHE_MAX_SIZE = 1024 * 1024 * 100;//100M
 
     private static HttpManager instance;
-    private Retrofit mRetrofit;
+    private Retrofit.Builder mRetrofitBuilder;
+    private PassengerService mPassengerService;
 
     private HttpManager() {
-        mRetrofit = new Retrofit.Builder()
+        mRetrofitBuilder = new Retrofit.Builder()
                 .baseUrl(PassengerService.BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create())
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-                .client(getOkHttp())
-                .build();
+                .client(getOkHttp());
     }
 
     public static synchronized HttpManager instance() {
@@ -77,7 +77,11 @@ public class HttpManager {
                 .build();
     }
 
-    public PassengerService getApiService() {
-        return mRetrofit.create(PassengerService.class);
+    public PassengerService getPassengerService() {
+        if (mPassengerService == null) {
+            mPassengerService = mRetrofitBuilder.build().create(PassengerService.class);
+        }
+        return mPassengerService;
     }
+
 }

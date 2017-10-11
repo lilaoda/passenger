@@ -14,6 +14,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.BottomSheetDialog;
+import android.support.v7.app.AlertDialog;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -56,12 +57,15 @@ import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 import bus.passenger.R;
+import bus.passenger.base.BaseApplication;
 import bus.passenger.base.PassengerConstants;
-import bus.passenger.bean.LoginResult;
+import bus.passenger.bean.CallCarResult;
+import bus.passenger.bean.CancelCarResult;
 import bus.passenger.bean.PoiInfo;
 import bus.passenger.bean.event.LocationResultEvent;
 import bus.passenger.bean.event.StartLocationEvent;
 import bus.passenger.bean.param.CallCarParam;
+import bus.passenger.bean.param.CancelCarParam;
 import bus.passenger.data.AMapManager;
 import bus.passenger.data.HttpManager;
 import bus.passenger.overlay.AMapUtil;
@@ -105,12 +109,11 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
     private static final int STATUS_SELECT_ADDRESS = 1;//正在选择起始或终点地址
     private static final int STATUS_READY_CALL = 2;//已选好地址，还没点击叫车
     private static final int STATUS_IS_CALLING = 3;//正在叫车中
+
     @BindView(R.id.text_begin_time)
     TextView textBeginTime;
     @BindView(R.id.ll_cancel)
     LinearLayout llCancel;
-    private int mCurrentStatus = 1;//目前的页面状态
-
     @BindView(R.id.text_start)
     TextView textStart;
     @BindView(R.id.text_end)
@@ -137,21 +140,23 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
     FrameLayout flRoot;
     TextureMapView mapView;
 
-    PoiInfo mStartPoiInfo;//用户当前选择的起始位置
-    PoiInfo mTargetPoiInfo;//用户当前选择的目的位置
+    private PoiInfo mStartPoiInfo;//用户当前选择的起始位置
+    private PoiInfo mTargetPoiInfo;//用户当前选择的目的位置
     private AMap mAMap;
     private Marker mScreenMarker;
     private BottomSheetDialog bottomSheetDialog;
     private MyLocationStyle mMyLocationStyle;
     private Unbinder mUnbinder;
-
-    private String[] mTitles = {"现在", "预约"};
-    private boolean isNeedLocation = true;//是否根据经纬度查询POI
-    private int mTextTimeHeight;
     private HttpManager mHttpManager;
     private AMapManager mAMapManager;
     private Disposable mTimeDisposable;
+    private AlertDialog mCancelCarDialog;
 
+    private String[] mTitles = {"现在", "预约"};
+    private boolean isNeedLocation = true;//是否根据经纬度查询POI
+    private int mCurrentStatus = 1;//目前的页面状态
+    private int mTextTimeHeight;
+    private String mOrderUuid;
 
     public static MainFragment newInstance() {
         Bundle args = new Bundle();
@@ -218,6 +223,7 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
         mCurrentStatus = status;
         switch (status) {
             case STATUS_SELECT_ADDRESS:
+                resetToolBar(true);
                 llAddress.setVisibility(View.VISIBLE);
                 llResult.setVisibility(View.GONE);
                 textResult.setText("");
@@ -228,7 +234,7 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
                 btnCommit.setVisibility(View.GONE);
                 break;
             case STATUS_READY_CALL:
-                resetToolBar();
+                resetToolBar(false);
                 llAddress.setVisibility(View.GONE);
                 llCancel.setVisibility(View.GONE);
                 llCallCar.setVisibility(View.VISIBLE);
@@ -236,6 +242,7 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
                 btnCommit.setVisibility(View.VISIBLE);
                 break;
             case STATUS_IS_CALLING:
+//                resetToolBar(false);
                 llCallCar.setVisibility(View.GONE);
                 llCancel.setVisibility(View.VISIBLE);
                 break;
@@ -351,17 +358,10 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
                 showTimeDialog();
                 break;
             case R.id.btn_commit:
-                setViewStatus(STATUS_IS_CALLING);
                 callCar();
                 break;
             case R.id.btn_cancel:
-                setViewStatus(STATUS_READY_CALL);
-                //移除下单计时器
-                if (mTimeDisposable != null && !mTimeDisposable.isDisposed()) {
-                    mTimeDisposable.dispose();
-                    textBeginTime.setText("");
-                }
-                cancelCallCar();
+                showCancelCarDialog();
                 break;
         }
     }
@@ -379,18 +379,14 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
         callCarParam.setOriginLat(mStartPoiInfo.getLatitude());
         callCarParam.setOriginLng(mStartPoiInfo.getLongitude());
         wrapHttp(mHttpManager.getPassengerService().callCar(callCarParam))
-                .compose(this.<LoginResult>bindToLifecycle())
-                .subscribe(new ResultObserver<LoginResult>(getActivity(),"正在下单...",true) {
+                .compose(this.<CallCarResult>bindToLifecycle())
+                .subscribe(new ResultObserver<CallCarResult>(getActivity(), "正在下单...", true) {
                     @Override
-                    public void onSuccess(LoginResult value) {
+                    public void onSuccess(CallCarResult value) {
+                        mOrderUuid = value.getOrderUuid();
                         //叫车成功
+                        setViewStatus(STATUS_IS_CALLING);
                         updateTimer();
-                    }
-
-                    @Override
-                    public void onFailure(Throwable e) {
-                        super.onFailure(e);
-                        setViewStatus(STATUS_READY_CALL);
                     }
                 });
     }
@@ -412,8 +408,37 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
 
     }
 
+    private void showCancelCarDialog() {
+        if (mCancelCarDialog == null) {
+            mCancelCarDialog = new AlertDialog.Builder(getActivity()).setTitle("确定取消叫车吗？")
+                    .setNegativeButton("点错了", null)
+                    .setPositiveButton("取消订单", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            cancelCallCar();
+                        }
+                    }).show();
+        } else {
+            mCancelCarDialog.show();
+        }
+    }
+
     private void cancelCallCar() {
-        ToastUtils.showString("取消订单");
+        CancelCarParam cancelCarParam = new CancelCarParam();
+        cancelCarParam.setOrderUuid(mOrderUuid);
+        wrapHttp(mHttpManager.getPassengerService().cancelCar(cancelCarParam))
+                .compose(this.<CancelCarResult>bindToLifecycle())
+                .subscribe(new ResultObserver<CancelCarResult>(getActivity(), "正在取消订单...", true) {
+                    @Override
+                    public void onSuccess(CancelCarResult value) {
+                        setViewStatus(STATUS_READY_CALL);
+                        //移除下单计时器
+                        if (mTimeDisposable != null && !mTimeDisposable.isDisposed()) {
+                            mTimeDisposable.dispose();
+                            textBeginTime.setText("");
+                        }
+                    }
+                });
     }
 
     private void showTimeDialog() {
@@ -676,10 +701,10 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
         mapView.onDestroy();
     }
 
-    //点返回键时调用
-    public void refreshView() {
+    //点击返回键且不是第一层时调用
+    public void onBackCallback() {
         if (mCurrentStatus == STATUS_IS_CALLING) {
-            setViewStatus(STATUS_READY_CALL);
+            showCancelCarDialog();
         } else if (mCurrentStatus == STATUS_READY_CALL) {
             setViewStatus(STATUS_SELECT_ADDRESS);
             isNeedLocation = true;
@@ -695,13 +720,24 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
                 }
             });
         } else {
-            getActivity().onBackPressed();
+            doExit();
         }
     }
 
-    private void resetToolBar() {
+    private long exitTime = 0;
+
+    private void doExit() {
+        if (System.currentTimeMillis() - exitTime > 2000) {
+            ToastUtils.showString("再按一次退出程序");
+            exitTime = System.currentTimeMillis();
+        } else {
+            BaseApplication.getInstance().closeApplication();
+        }
+    }
+
+    private void resetToolBar(boolean isRoot) {
         MainActivity activity = (MainActivity) getActivity();
-        activity.updateDrawerToggle(false);
+        activity.updateDrawerToggle(isRoot);
     }
 
     private OnLocationChangedListener mOnLocationChangedListener;

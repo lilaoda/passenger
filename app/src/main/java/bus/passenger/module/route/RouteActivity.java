@@ -50,7 +50,7 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
         initToolbar(getString(R.string.my_route));
         mHttpManager = HttpManager.instance();
 //        mOrderList = new ArrayList<>();
-//        for (int i = 0; i < 3; i++) {
+//        for (int i = 0; i < 8; i++) {
 //            mOrderList.add(new OrderInfo());
 //        }
         initView();
@@ -97,38 +97,32 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
         mOrderAdapter.disableLoadMoreIfNotFullPage(recyclerView);
     }
 
-    private void loadMore() {
-//        Observable.timer(2, TimeUnit.SECONDS).observeOn(AndroidSchedulers.mainThread())
-//                .subscribe(new Consumer<Long>() {
-//                    @Override
-//                    public void accept(@NonNull Long aLong) throws Exception {
-//                        if (mOrderList.size() > 40) {
-//                            mOrderAdapter.loadMoreEnd();
-//                        } else {
-//                            mOrderAdapter.addData(mOrderList);
-//                            mOrderAdapter.loadMoreComplete();
-//                        }
-//                    }
-//                });
-    }
-
-    private void refresh() {
+    private void refresh(final boolean isLoadMore) {
         wrapHttp(mHttpManager.getPassengerService().findTrip())
                 .compose(this.<List<OrderInfo>>bindToLifecycle())
                 .subscribe(new ResultObserver<List<OrderInfo>>(true) {
                     @Override
                     public void onSuccess(List<OrderInfo> value) {
                         mOrderList = value;
-                        if (refreshLayout.isRefreshing()) {
+                        if(isLoadMore){
+                            if(value==null||value.size()==0){
+                                mOrderAdapter.loadMoreEnd();
+                            }else {
+                                mOrderAdapter.addData(value);
+                                mOrderAdapter.loadMoreComplete();
+                            }
+                        }else {
                             refreshLayout.setRefreshing(false);
+                            refreshAdapter();
                         }
-                        refreshAdapter();
                     }
 
                     @Override
                     public void onFailure(Throwable e) {
                         super.onFailure(e);
-                        if (refreshLayout.isRefreshing()) {
+                        if(isLoadMore){
+                            mOrderAdapter.loadMoreFail();
+                        }else {
                             refreshLayout.setRefreshing(false);
                         }
                     }
@@ -137,13 +131,13 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
 
     @Override
     public void onRefresh() {
-        refresh();
+        refresh(false);
     }
 
 
     @Override
     public void onLoadMoreRequested() {
-        loadMore();
+        refresh(true);
     }
 
     @Override

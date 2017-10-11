@@ -2,10 +2,13 @@ package bus.passenger.data.remote;
 
 import java.util.List;
 
+import bus.passenger.bean.CallCarResult;
+import bus.passenger.bean.CancelCarResult;
 import bus.passenger.bean.LoginResult;
 import bus.passenger.bean.OrderInfo;
 import bus.passenger.bean.RegisterResult;
 import bus.passenger.bean.param.CallCarParam;
+import bus.passenger.bean.param.CancelCarParam;
 import bus.passenger.bean.param.LoginParam;
 import bus.passenger.bean.param.RegistParam;
 import io.reactivex.Observable;
@@ -28,9 +31,21 @@ public interface PassengerService {
     @POST("passenger/login")
     Observable<HttpResult<LoginResult>> login(@Body LoginParam param);
 
+    /**
+     * 叫车
+     */
     @POST("passenger/callCar")
-    Observable<HttpResult<LoginResult>> callCar(@Body CallCarParam param);
+    Observable<HttpResult<CallCarResult>> callCar(@Body CallCarParam param);
 
+    /**
+     * 叫车
+     */
+    @POST("passenger/cancelCar")
+    Observable<HttpResult<CancelCarResult>> cancelCar(@Body CancelCarParam param);
+
+    /**
+     * 获取行程
+     */
     @POST("passenger/findTrip")
     Observable<HttpResult<List<OrderInfo>>> findTrip();
 

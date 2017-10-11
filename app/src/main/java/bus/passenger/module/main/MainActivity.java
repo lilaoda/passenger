@@ -17,8 +17,6 @@ import android.view.Window;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.bumptech.glide.Glide;
-
 import bus.passenger.R;
 import bus.passenger.base.BaseActivity;
 import bus.passenger.data.DbManager;
@@ -28,6 +26,7 @@ import bus.passenger.module.route.RouteActivity;
 import bus.passenger.module.setting.SettingActivity;
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import lhy.lhylibrary.base.GlideApp;
 import lhy.lhylibrary.utils.StatusBarUtil;
 import lhy.lhylibrary.utils.ToastUtils;
 
@@ -45,7 +44,6 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
 
     private MainFragment mMainFragment;
     private ActionBarDrawerToggle mDrawerToggle;
-    private boolean isRoot;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,7 +83,8 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
         if (user == null) {
             userName.setText("请登陆");
         } else {
-            Glide.with(this).load(user.getIconUrl()).into(userIcon);
+            userName.setText(user.getPhone());
+            GlideApp.with(this).load(user.getIconUrl()).error(R.mipmap.icon_user_default).into(userIcon);
         }
     }
 
@@ -114,7 +113,11 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
 
     @Override
     public void onBackPressed() {
-        doBack();
+        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.closeDrawer(GravityCompat.START);
+            return;
+        }
+        mMainFragment.onBackCallback();
     }
 
     @Override
@@ -156,7 +159,7 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
         }
         // If not handled by drawerToggle, home needs to be handled by returning to previous
         if (item != null && item.getItemId() == android.R.id.home) {
-            doBack();
+            onBackPressed();
             return true;
         }
         if (item != null && item.getItemId() == R.id.action_settings) {
@@ -164,19 +167,6 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
             return true;
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    private void doBack() {
-        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
-            drawerLayout.closeDrawer(GravityCompat.START);
-            return;
-        }
-        if (isRoot) {
-            super.onBackPressed();
-        } else {
-            updateDrawerToggle(true);
-            mMainFragment.refreshView();
-        }
     }
 
     @SuppressWarnings("StatementWithEmptyBody")
@@ -205,7 +195,6 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
     }
 
     public void updateDrawerToggle(boolean isRoot) {
-        this.isRoot = isRoot;
         if (mDrawerToggle == null) {
             return;
         }

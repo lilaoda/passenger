@@ -24,6 +24,9 @@ public class GlideCacheUtils {
         return inst;
     }
 
+
+
+
     /**
      * 清除图片磁盘缓存
      */

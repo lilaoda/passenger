@@ -20,7 +20,6 @@ import bus.passenger.data.HttpManager;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import lhy.lhylibrary.http.ResultObserver;
-import lhy.lhylibrary.utils.ToastUtils;
 
 import static bus.passenger.utils.RxUtils.wrapHttp;
 import static lhy.lhylibrary.base.LhyApplication.getContext;
@@ -28,6 +27,7 @@ import static lhy.lhylibrary.base.LhyApplication.getContext;
 /**
  * Created by Liheyu on 2017/9/26.
  * 我的行程
+ *
  */
 
 public class RouteActivity extends BaseActivity implements BaseQuickAdapter.RequestLoadMoreListener,
@@ -39,7 +39,6 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
     SwipeRefreshLayout refreshLayout;
 
     private HttpManager mHttpManager;
-    private List<OrderInfo> mOrderList;
     private OrderListAdapter mOrderAdapter;
 
     @Override
@@ -49,10 +48,6 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
         ButterKnife.bind(this);
         initToolbar(getString(R.string.my_route));
         mHttpManager = HttpManager.instance();
-//        mOrderList = new ArrayList<>();
-//        for (int i = 0; i < 8; i++) {
-//            mOrderList.add(new OrderInfo());
-//        }
         initView();
         getDataFormServer();
     }
@@ -63,38 +58,27 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
                 .subscribe(new ResultObserver<List<OrderInfo>>(this, "正在加载...", true) {
                     @Override
                     public void onSuccess(List<OrderInfo> value) {
-                        mOrderList = value;
-                        if (refreshLayout.isRefreshing()) {
-                            refreshLayout.setRefreshing(false);
-                        }
-                        refreshAdapter();
-                    }
-
-                    @Override
-                    public void onFailure(Throwable e) {
-                        super.onFailure(e);
-                        if (refreshLayout.isRefreshing()) {
-                            refreshLayout.setRefreshing(false);
-                        }
+                        refreshAdapter(value);
                     }
                 });
     }
 
-    private void refreshAdapter() {
-        mOrderAdapter.setNewData(mOrderList);
-        mOrderAdapter.disableLoadMoreIfNotFullPage(recyclerView);
+    private void refreshAdapter(List<OrderInfo> value) {
+        mOrderAdapter.setNewData(value);
+      //  mOrderAdapter.disableLoadMoreIfNotFullPage(recyclerView);
     }
 
     private void initView() {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        mOrderAdapter = new OrderListAdapter(mOrderList);
+        mOrderAdapter = new OrderListAdapter(null);
         mOrderAdapter.setEmptyView(R.layout.emptyview_route, (ViewGroup) recyclerView.getParent());
         recyclerView.setAdapter(mOrderAdapter);
         mOrderAdapter.setOnItemClickListener(this);
-        mOrderAdapter.setOnLoadMoreListener(this, recyclerView);
+       // 第一期先不做分页
+       // mOrderAdapter.setOnLoadMoreListener(this, recyclerView);
         refreshLayout.setOnRefreshListener(this);
         //这句要想有效果必须放在监听器之后 要想不满屏时不能上拉加载，需要放在监听器之后 然后每次刷新数据都要再调用
-        mOrderAdapter.disableLoadMoreIfNotFullPage(recyclerView);
+      //  mOrderAdapter.disableLoadMoreIfNotFullPage(recyclerView);
     }
 
     private void refresh(final boolean isLoadMore) {
@@ -103,7 +87,6 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
                 .subscribe(new ResultObserver<List<OrderInfo>>(true) {
                     @Override
                     public void onSuccess(List<OrderInfo> value) {
-                        mOrderList = value;
                         if(isLoadMore){
                             if(value==null||value.size()==0){
                                 mOrderAdapter.loadMoreEnd();
@@ -113,7 +96,7 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
                             }
                         }else {
                             refreshLayout.setRefreshing(false);
-                            refreshAdapter();
+                            refreshAdapter(value);
                         }
                     }
 
@@ -137,11 +120,11 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
 
     @Override
     public void onLoadMoreRequested() {
-        refresh(true);
+     //   refresh(true);
     }
 
     @Override
     public void onItemClick(BaseQuickAdapter adapter, View view, int position) {
-        ToastUtils.showInt(position);
+      //  ToastUtils.showString(position+"");
     }
 }

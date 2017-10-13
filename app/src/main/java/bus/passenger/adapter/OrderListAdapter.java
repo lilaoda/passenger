@@ -1,9 +1,6 @@
 package bus.passenger.adapter;
 
-import android.support.annotation.LayoutRes;
 import android.support.annotation.Nullable;
-import android.view.View;
-import android.view.ViewGroup;
 
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.chad.library.adapter.base.BaseViewHolder;
@@ -26,20 +23,11 @@ public class OrderListAdapter extends BaseQuickAdapter<OrderInfo, BaseViewHolder
         super(R.layout.item_order_list, data);
     }
 
-
-    @Override
-    protected View getItemView(@LayoutRes int layoutResId, ViewGroup parent) {
-        return super.getItemView(layoutResId, parent);
-    }
-
     @Override
     protected void convert(BaseViewHolder helper, OrderInfo item) {
-
+        helper.setText(R.id.text_start, "始点: "+item.getOriginAddress())
+                .setText(R.id.text_end, "终点: "+item.getDestAddress())
+                .setText(R.id.text_orderid, "订单编号: " + item.getOrderUuid())
+                .setText(R.id.text_status, "订单状态：" + item.getSubStatus() + "");
     }
-
-    @Override
-    public int addHeaderView(View header) {
-        return super.addHeaderView(header);
-    }
-
 }

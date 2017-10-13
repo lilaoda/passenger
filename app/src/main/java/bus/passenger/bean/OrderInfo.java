@@ -1,12 +1,15 @@
 package bus.passenger.bean;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 /**
  * Created by Lilaoda on 2017/10/9.
  * Email:749948218@qq.com
  * 我的行程里 乘客的历史订单
  */
 
-public class OrderInfo {
+public class OrderInfo implements Parcelable {
 
 
     /**
@@ -57,7 +60,48 @@ public class OrderInfo {
     private String destAddress;
     private String destDetailAddress;
     private int mainStatus;
+    /**
+     * 订单子状态(100.等待应答（拼车中） 200.等待接驾-预约 201.等待接驾-已出发未到达 202.等待接驾-已到达 210.出发接乘客 220.司机到达等待乘客 300.行程开始 301到达目的地400.待支付 500.已完成(待评价) 501.已完成-已评价 600.取消-自主取消 601.取消-后台取消 602.取消-应答前取消)
+     */
     private int subStatus;
+
+    protected OrderInfo(Parcel in) {
+        passengerUuid = in.readString();
+        orderUuid = in.readString();
+        actualPasNam = in.readString();
+        actualPasMob = in.readString();
+        actualPasNum = in.readString();
+        leaveTime = in.readString();
+        mapType = in.readInt();
+        originCityUuid = in.readString();
+        originBuscircleUuid = in.readString();
+        originLng = in.readDouble();
+        originLat = in.readDouble();
+        originCity = in.readString();
+        originAddress = in.readString();
+        originDetailAddress = in.readString();
+        destCityUuid = in.readString();
+        destBuscircleUuid = in.readString();
+        destLng = in.readDouble();
+        destLat = in.readDouble();
+        destCity = in.readString();
+        destAddress = in.readString();
+        destDetailAddress = in.readString();
+        mainStatus = in.readInt();
+        subStatus = in.readInt();
+    }
+
+    public static final Creator<OrderInfo> CREATOR = new Creator<OrderInfo>() {
+        @Override
+        public OrderInfo createFromParcel(Parcel in) {
+            return new OrderInfo(in);
+        }
+
+        @Override
+        public OrderInfo[] newArray(int size) {
+            return new OrderInfo[size];
+        }
+    };
 
     public String getPassengerUuid() {
         return passengerUuid;
@@ -241,5 +285,37 @@ public class OrderInfo {
 
     public void setSubStatus(int subStatus) {
         this.subStatus = subStatus;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(passengerUuid);
+        dest.writeString(orderUuid);
+        dest.writeString(actualPasNam);
+        dest.writeString(actualPasMob);
+        dest.writeString(actualPasNum);
+        dest.writeString(leaveTime);
+        dest.writeInt(mapType);
+        dest.writeString(originCityUuid);
+        dest.writeString(originBuscircleUuid);
+        dest.writeDouble(originLng);
+        dest.writeDouble(originLat);
+        dest.writeString(originCity);
+        dest.writeString(originAddress);
+        dest.writeString(originDetailAddress);
+        dest.writeString(destCityUuid);
+        dest.writeString(destBuscircleUuid);
+        dest.writeDouble(destLng);
+        dest.writeDouble(destLat);
+        dest.writeString(destCity);
+        dest.writeString(destAddress);
+        dest.writeString(destDetailAddress);
+        dest.writeInt(mainStatus);
+        dest.writeInt(subStatus);
     }
 }

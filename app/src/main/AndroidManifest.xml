@@ -46,10 +46,12 @@
         <activity android:name=".module.route.RouteActivity" />
         <activity android:name=".module.customerservice.CustomerServiceActivity" />
         <activity android:name=".module.setting.SuggestActivity" />
+        <activity android:name=".module.order.OrderDetailActivity" />
 
         <!--高德地图-->
         <service android:name="com.amap.api.location.APSService" />
         <service android:name=".service.LocationService" />
+        <service android:name=".service.OrderService" />
 
         <meta-data
             android:name="com.amap.api.v2.apikey"

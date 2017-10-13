@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import bus.passenger.BuildConfig;
 import bus.passenger.data.remote.PassengerService;
 import bus.passenger.data.remote.HeadIntercepter;
+import bus.passenger.data.remote.PushService;
 import lhy.lhylibrary.base.LhyApplication;
 import lhy.lhylibrary.http.interceptor.CacheIntercepter;
 import lhy.lhylibrary.utils.FileUtils;
@@ -32,6 +33,7 @@ public class HttpManager {
     private static HttpManager instance;
     private Retrofit.Builder mRetrofitBuilder;
     private PassengerService mPassengerService;
+    private PushService mPushService;
 
     private HttpManager() {
         mRetrofitBuilder = new Retrofit.Builder()
@@ -82,6 +84,13 @@ public class HttpManager {
             mPassengerService = mRetrofitBuilder.build().create(PassengerService.class);
         }
         return mPassengerService;
+    }
+
+    public PushService getPushService() {
+        if (mPushService == null) {
+            mPushService = mRetrofitBuilder.baseUrl(PushService.BASE_URL).build().create(PushService.class);
+        }
+        return mPushService;
     }
 
 }

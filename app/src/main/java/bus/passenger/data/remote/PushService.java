@@ -13,10 +13,12 @@ import retrofit2.http.POST;
 
 public interface PushService {
 
-    String BASE_URL = "http://192.168.8.58:8883/";
+    //    String BASE_URL = "http://192.168.8.58:8883/";
+    String BASE_URL = "http://120.24.79.21:8883/";
 
     /**
      * 通知乘客司机已经接单
+     *
      * @return
      */
     @POST("communication/pushOrderConfirm")

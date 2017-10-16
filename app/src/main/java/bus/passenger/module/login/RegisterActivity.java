@@ -22,7 +22,7 @@ import bus.passenger.bean.param.LoginParam;
 import bus.passenger.bean.param.RegistParam;
 import bus.passenger.data.DbManager;
 import bus.passenger.data.HttpManager;
-import bus.passenger.data.entity.User;
+import bus.passenger.data.local.entity.User;
 import bus.passenger.data.remote.HttpResult;
 import bus.passenger.module.main.MainActivity;
 import butterknife.BindView;
@@ -80,6 +80,7 @@ public class RegisterActivity extends BaseActivity implements View.OnClickListen
         }
     };
     private HttpManager mHttpManager;
+    private DbManager mDbManager;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -87,6 +88,7 @@ public class RegisterActivity extends BaseActivity implements View.OnClickListen
         setContentView(R.layout.activity_register);
         ButterKnife.bind(this);
         mHttpManager = HttpManager.instance();
+        mDbManager = DbManager.instance();
     }
 
     @Override
@@ -172,7 +174,7 @@ public class RegisterActivity extends BaseActivity implements View.OnClickListen
                 }
             }
         })).compose(this.<LoginResult>bindToLifecycle())
-                .subscribe(new ResultObserver<LoginResult>(this,"正在注册...",true) {
+                .subscribe(new ResultObserver<LoginResult>(this, "正在注册...", true) {
                     @Override
                     public void onSuccess(LoginResult value) {
                         saveUserInfo(value);
@@ -188,7 +190,7 @@ public class RegisterActivity extends BaseActivity implements View.OnClickListen
         user.setPhone(CommonUtils.getString(editPhone));
         user.setPassword(CommonUtils.getString(editPwd));
         user.setToken(value.getToken());
-        DbManager.instance().saveUser(user);
+        mDbManager.saveUser(user);
     }
 
     @OnClick({R.id.identify_code, R.id.btn_next, R.id.ib_back})
@@ -204,9 +206,18 @@ public class RegisterActivity extends BaseActivity implements View.OnClickListen
                 break;
             case R.id.btn_next:
                 if (checkPhone() && checkPwd()) {
+                    clearToken();
                     doNext();
                 }
                 break;
+        }
+    }
+
+    private void clearToken() {
+        User user = mDbManager.getUser();
+        if (user != null) {
+            user.setToken("");
+            mDbManager.updateUser(user);
         }
     }
 

@@ -18,13 +18,12 @@
 
 #-----------------------------项目中的实体类-----------------------------------------#
 #项目中的bean实体类不混淆
--keep class com.xbwl.pda.entity.** {*;}
--keep class com.xbwl.pda.entity.parame.{*;}
--keep class com.xbwl.pda.entity.parame$* { *; }
--keep class com.xbwl.pda.reptository.remote.interaptor.MergeLoadPara{*;}
--keep class com.xbwl.pda.reptository.remote.HttpResult{*;}
+-keep class bus.passenger.bean.** {*;}
+-keep class bus.passenger.bean.param.{*;}
+-keep class bus.passenger.bean.event$* { *; }
+-keep class bus.passenger.data.remote.HttpResult{*;}
 #保持本地数据库表不混淆
--keep class com.xbwl.pda.reptository.local.db.table.** {*;}
+-keep class bus.passenger.data.local.entity.** {*;}
 
 #-----------------------------第三方jar包-----------------------------------------#
 #butterknife
@@ -51,6 +50,32 @@
 -keepattributes *DatabaseTable*
 -keepattributes *SerializedName*
 #-keepclassmembersclass * {@com.j256.ormlite.field.DatabaseField*;}
+
+#greenDao
+-keep class org.greenrobot.greendao.**{*;}
+-keep public interface org.greenrobot.greendao.**
+-keepclassmembers class * extends org.greenrobot.greendao.AbstractDao {
+public static java.lang.String TABLENAME;
+}
+-keep class **$Properties
+-keep class data.db.dao.*$Properties {
+    public static <fields>;
+}
+-keepclassmembers class data.db.dao.** {
+    public static final <fields>;
+  }
+-keep class net.sqlcipher.database.**{*;}
+-keep public interface net.sqlcipher.database.**
+-dontwarn net.sqlcipher.database.**
+-dontwarn org.greenrobot.greendao.**
+
+#BaseRecylcerViewHelper
+-keep class com.chad.library.adapter.** {*;}
+-keep public class * extends com.chad.library.adapter.base.BaseQuickAdapter
+-keep public class * extends com.chad.library.adapter.base.BaseViewHolder
+-keepclassmembers  class **$** extends com.chad.library.adapter.base.BaseViewHolder {
+     <init>(...);
+}
 
 # LeakCanary
 -keep class com.squareup.leakcanary.** { *; }
@@ -106,6 +131,10 @@
 -dontwarn com.jakewharton.**
 -keep class com.jakewharton.** { *; }
 
+# filedownloader uses okhttp3-lib, so need add below proguard rules.
+#-dontwarn okhttp3.*
+#-dontwarn okio.**
+
 #okhttp
 -dontwarn okhttp3.**
 -keep class okhttp3.**{*;}
@@ -140,6 +169,27 @@
 -keepclassmembers class * extends org.greenrobot.eventbus.util.ThrowableFailureEvent {
     <init>(java.lang.Throwable);
 }
+
+#3D 地图 V5.0.0之后：
+-keep   class com.amap.api.maps.**{*;}
+-keep   class com.autonavi.**{*;}
+-keep   class com.amap.api.trace.**{*;}
+
+#定位
+-keep class com.amap.api.location.**{*;}
+-keep class com.amap.api.fence.**{*;}
+-keep class com.autonavi.aps.amapapi.model.**{*;}
+
+#搜索
+-keep   class com.amap.api.services.**{*;}
+
+#2D地图
+-keep class com.amap.api.maps2d.**{*;}
+-keep class com.amap.api.mapcore2d.**{*;}
+
+#导航
+-keep class com.amap.api.navi.**{*;}
+-keep class com.autonavi.**{*;}
 
 #-----------------------------基本指令区-------------------------------------------#
 -optimizationpasses 5

@@ -12,7 +12,7 @@ import bus.passenger.bean.LoginResult;
 import bus.passenger.bean.param.LoginParam;
 import bus.passenger.data.DbManager;
 import bus.passenger.data.HttpManager;
-import bus.passenger.data.entity.User;
+import bus.passenger.data.local.entity.User;
 import bus.passenger.module.main.MainActivity;
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -56,6 +56,8 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
         if (user != null) {
             editPhone.setText(user.getPhone());
             editPwd.setText(user.getPassword());
+            user.setToken("");
+
         }
     }
 
@@ -67,6 +69,7 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
                 break;
             case R.id.btn_login:
                 if (checkData()) {
+                    clearToken();
 //                    startActivity(new Intent(this,MainActivity.class));
                     doSignin();
                 }
@@ -79,20 +82,28 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
         }
     }
 
+    private void clearToken() {
+        User user = mDbManager.getUser();
+        if (user != null) {
+            user.setToken("");
+            mDbManager.updateUser(user);
+        }
+    }
+
     private void doSignin() {
         LoginParam loginParam = new LoginParam();
         loginParam.setAccountType("0");
         loginParam.setUserName(CommonUtils.getString(editPhone));
         loginParam.setPassword(CommonUtils.getString(editPwd));
         wrapHttp(mHttpManager.getPassengerService().login(loginParam))
-                    .compose(this.<LoginResult>bindToLifecycle())
-                    .subscribe(new ResultObserver<LoginResult>(this, "正在登陆", true) {
-                        @Override
-                        public void onSuccess(LoginResult value) {
-                            saveUserInfo(value);
-                            startActivity(new Intent(LoginActivity.this, MainActivity.class));
-                        }
-                    });
+                .compose(this.<LoginResult>bindToLifecycle())
+                .subscribe(new ResultObserver<LoginResult>(this, "正在登陆", true) {
+                    @Override
+                    public void onSuccess(LoginResult value) {
+                        saveUserInfo(value);
+                        startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                    }
+                });
     }
 
     private void saveUserInfo(LoginResult value) {

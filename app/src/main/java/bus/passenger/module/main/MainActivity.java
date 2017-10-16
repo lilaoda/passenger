@@ -20,7 +20,7 @@ import android.widget.TextView;
 import bus.passenger.R;
 import bus.passenger.base.BaseActivity;
 import bus.passenger.data.DbManager;
-import bus.passenger.data.entity.User;
+import bus.passenger.data.local.entity.User;
 import bus.passenger.module.customerservice.CustomerServiceActivity;
 import bus.passenger.module.route.RouteActivity;
 import bus.passenger.module.setting.SettingActivity;

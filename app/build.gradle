@@ -23,11 +23,13 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
         debug {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
     }
@@ -45,7 +47,7 @@ android {
     }
     greendao {
         schemaVersion 1
-        daoPackage 'bus.passenger.data.gen'
+        daoPackage 'bus.passenger.data.local.gen'
         targetGenDir 'src/main/java'
     }
 }

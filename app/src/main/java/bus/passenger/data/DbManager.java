@@ -4,9 +4,9 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 
 import bus.passenger.base.BaseApplication;
-import bus.passenger.data.entity.User;
-import bus.passenger.data.gen.DaoMaster;
-import bus.passenger.data.gen.DaoSession;
+import bus.passenger.data.local.entity.User;
+import bus.passenger.data.local.gen.DaoMaster;
+import bus.passenger.data.local.gen.DaoSession;
 
 
 /**

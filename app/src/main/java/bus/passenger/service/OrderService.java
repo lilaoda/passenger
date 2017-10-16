@@ -106,7 +106,9 @@ public class OrderService extends Service {
     private void startPullOrderResult() {
         Log.i(TAG, "stopPullOrder: " + "开始循环拉取订单是否被接单");
         if (mOrderDisposable != null && !mOrderDisposable.isDisposed()) return;
-        mOrderDisposable = Flowable.interval(INTERVAL_PULL_ORDER, TimeUnit.SECONDS).take(Integer.MAX_VALUE).observeOn(AndroidSchedulers.mainThread())
+        mOrderDisposable = Flowable.interval(INTERVAL_PULL_ORDER, TimeUnit.SECONDS)
+                .onBackpressureLatest()
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Consumer<Long>() {
                     @Override
                     public void accept(@NonNull Long aLong) throws Exception {

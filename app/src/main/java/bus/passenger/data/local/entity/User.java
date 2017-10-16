@@ -1,4 +1,4 @@
-package bus.passenger.data.entity;
+package bus.passenger.data.local.entity;
 
 import org.greenrobot.greendao.DaoException;
 import org.greenrobot.greendao.annotation.Entity;
@@ -6,8 +6,8 @@ import org.greenrobot.greendao.annotation.Generated;
 import org.greenrobot.greendao.annotation.Id;
 import org.greenrobot.greendao.annotation.Unique;
 
-import bus.passenger.data.gen.DaoSession;
-import bus.passenger.data.gen.UserDao;
+import bus.passenger.data.local.gen.DaoSession;
+import bus.passenger.data.local.gen.UserDao;
 
 
 /**

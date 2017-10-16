@@ -23,7 +23,8 @@ import retrofit2.http.POST;
 
 public interface PassengerService {
 
-    String BASE_URL = "http://192.168.8.41:8183/";
+//    String BASE_URL = "http://192.168.8.41:8183/";
+    String BASE_URL = "http://120.24.79.21:8183/";
 
     @POST("passenger/register")
     Observable<HttpResult<RegisterResult>> regist(@Body RegistParam param);

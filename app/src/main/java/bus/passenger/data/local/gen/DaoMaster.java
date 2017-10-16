@@ -1,4 +1,4 @@
-package bus.passenger.data.gen;
+package bus.passenger.data.local.gen;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;

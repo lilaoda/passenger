@@ -78,6 +78,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import butterknife.Unbinder;
+import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
@@ -403,18 +404,22 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
 
     //显示下单时间
     private void updateTimer() {
-        mTimeDisposable = Observable.interval(1, TimeUnit.SECONDS, AndroidSchedulers.mainThread()).take(3600).map(new Function<Long, String>() {
-            @Override
-            public String apply(@io.reactivex.annotations.NonNull Long aLong) throws Exception {
-                int i = aLong.intValue();
-                return i / 60 + "分" + i % 60 + "秒";
-            }
-        }).subscribe(new Consumer<String>() {
-            @Override
-            public void accept(@io.reactivex.annotations.NonNull String s) throws Exception {
-                textBeginTime.setText(s);
-            }
-        });
+        mTimeDisposable = Flowable.interval(1, TimeUnit.SECONDS)
+                .map(new Function<Long, String>() {
+                    @Override
+                    public String apply(@io.reactivex.annotations.NonNull Long aLong) throws Exception {
+                        int i = aLong.intValue();
+                        return i / 60 + "分" + i % 60 + "秒";
+                    }
+                })
+                .observeOn(AndroidSchedulers.mainThread())
+                .compose(this.<String>bindToLifecycle())
+                .subscribe(new Consumer<String>() {
+                    @Override
+                    public void accept(@io.reactivex.annotations.NonNull String s) throws Exception {
+                        textBeginTime.setText(s);
+                    }
+                });
 
     }
 
@@ -722,11 +727,17 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
     //点击返回键且不是第一层时调用
     public void onBackCallback() {
         if (mCurrentStatus == STATUS_IS_CALLING) {
+
+            //TODO 待测试
+            setViewStatus(STATUS_READY_CALL);
+            setPullOrderResult(false);
+            mOndoingOrder = null;
+            removeTimeTask();
 //            if (mOndoingOrder != null) {
 //                setViewStatus(STATUS_READY_CALL);
 //                setPullOrderResult(false);
 //            }else {
-                showCancelCarDialog();
+//            showCancelCarDialog();
 //            }
         } else if (mCurrentStatus == STATUS_READY_CALL) {
             setViewStatus(STATUS_SELECT_ADDRESS);

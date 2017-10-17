@@ -55,6 +55,7 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import bus.passenger.R;
@@ -71,6 +72,7 @@ import bus.passenger.bean.param.CallCarParam;
 import bus.passenger.bean.param.CancelCarParam;
 import bus.passenger.data.AMapManager;
 import bus.passenger.data.HttpManager;
+import bus.passenger.module.route.RouteActivity;
 import bus.passenger.overlay.AMapUtil;
 import bus.passenger.overlay.DrivingRouteOverlay;
 import bus.passenger.service.LocationService;
@@ -162,6 +164,7 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
     private int mCurrentStatus = 1;//目前的页面状态
     private int mTextTimeHeight;
     private String mOrderUuid;
+    private AlertDialog mAlertDialog;
 
     public static MainFragment newInstance() {
         Bundle args = new Bundle();
@@ -363,7 +366,8 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
                 showTimeDialog();
                 break;
             case R.id.btn_commit:
-                callCar();
+                getTrip();
+//                callCar();
                 break;
             case R.id.btn_cancel:
                 if (mOndoingOrder != null) {
@@ -372,6 +376,45 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
                     showCancelCarDialog();
                 }
                 break;
+        }
+    }
+
+    private void getTrip() {
+        //TODO 第一期主动获取订单列表 ，发现有正在进行中的订单，不让下单
+        wrapHttp(mHttpManager.getPassengerService().findTrip())
+                .compose(this.<List<OrderInfo>>bindToLifecycle())
+                .subscribe(new ResultObserver<List<OrderInfo>>(getActivity(), "正在加载...", true) {
+                    @Override
+                    public void onSuccess(List<OrderInfo> value) {
+                        boolean showDialog = false;
+                        for (OrderInfo order : value) {
+                            if (order.getMainStatus() == 2||order.getMainStatus()==1) {
+                                showDialog = true;
+                                break;
+                            }
+                        }
+                        if (showDialog) {
+                            showCannotDialog();
+                        } else {
+                            callCar();
+                        }
+                    }
+                });
+    }
+
+    private void showCannotDialog() {
+        if (mAlertDialog == null) {
+            mAlertDialog = new AlertDialog.Builder(getActivity())
+                    .setMessage("您有进行中的订单，请先完成！")
+                    .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            startActivity(new Intent(getActivity(), RouteActivity.class));
+                        }
+                    }).setNegativeButton("取消", null)
+                    .show();
+        } else {
+            mAlertDialog.show();
         }
     }
 
@@ -720,6 +763,10 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
     @Override
     public void onDestroy() {
         super.onDestroy();
+        if (mAlertDialog != null) {
+            mAlertDialog.dismiss();
+            mAlertDialog = null;
+        }
         EventBus.getDefault().unregister(this);
         mapView.onDestroy();
     }

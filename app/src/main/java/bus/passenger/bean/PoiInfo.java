@@ -10,7 +10,7 @@ import android.os.Parcelable;
  * 地理位置信息
  */
 
-public class PoiInfo implements Parcelable{
+public class PoiInfo implements Parcelable {
 
     private double latitude;
     private double longitude;
@@ -20,6 +20,7 @@ public class PoiInfo implements Parcelable{
     private String provinceName;
     private String adName;
     private String snippet;
+    private String adCode;
 
     public PoiInfo() {
     }
@@ -142,4 +143,13 @@ public class PoiInfo implements Parcelable{
         dest.writeString(adName);
         dest.writeString(snippet);
     }
+
+    public void setAdCode(String adCode) {
+        this.adCode = adCode;
+    }
+
+    public String getAdCode() {
+        return adCode;
+    }
+
 }

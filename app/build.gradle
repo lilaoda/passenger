@@ -36,6 +36,7 @@ android {
     sourceSets {
         main {
             jniLibs.srcDirs = ['libs']
+            assets.srcDirs = ['src/main/assets', 'src/main/assets/']
         }
     }
     defaultConfig {
@@ -68,8 +69,13 @@ dependencies {
     compile project(':lhylibrary')
     compile files('libs/AMap3DMap_5.3.0_AMapNavi_5.3.0_AMapSearch_5.3.1_AMapLocation_3.5.0_20170817.jar')
     compile 'org.greenrobot:greendao:3.2.2'
-//    compile 'com.google.dagger:dagger:2.11'
-//    annotationProcessor 'com.google.dagger:dagger-compiler:2.11'
+    //    compile 'com.google.dagger:dagger:2.11'
+    //    annotationProcessor 'com.google.dagger:dagger-compiler:2.11'
     compile 'org.greenrobot:eventbus:3.0.0'
     //    compile 'com.google.dagger:dagger-android-support:2.11'
+    compile 'com.orhanobut:logger:1.15'
+    compile 'se.emilsjolander:stickylistheaders:2.7.0'
+    compile 'com.github.promeg:tinypinyin:2.0.3' // TinyPinyin核心包，约80KB
+    compile 'com.github.promeg:tinypinyin-lexicons-android-cncity:2.0.3' // 可选，适用于Android的中国地区词典
+
 }

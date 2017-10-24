@@ -18,7 +18,6 @@ import bus.passenger.R;
 import bus.passenger.base.BaseActivity;
 import bus.passenger.data.SpManager;
 import bus.passenger.module.login.LoginActivity;
-import bus.passenger.module.main.MainActivity;
 import bus.passenger.service.LocationService;
 import bus.passenger.service.OrderService;
 import butterknife.BindView;
@@ -46,7 +45,7 @@ public class SplashActivity extends BaseActivity implements View.OnClickListener
         }
         setContentView(R.layout.activity_splash);
         ButterKnife.bind(this);
-        startService(new Intent(this, LocationService.class).putExtra(LocationService.FIRST_LOCATE,true));
+        startService(new Intent(this, LocationService.class).putExtra(LocationService.FIRST_LOCATE, true));
         startService(new Intent(this, OrderService.class));
         boolean isStarted = SpManager.instance().getBoolean(SpManager.IS_STARTED);
         if (!isStarted) {
@@ -57,7 +56,6 @@ public class SplashActivity extends BaseActivity implements View.OnClickListener
         }
     }
 
-
     private void initView() {
         View startView = LayoutInflater.from(this).inflate(R.layout.indicator_start, null);
         Button bt_start = (Button) startView.findViewById(R.id.btn_start);
@@ -66,7 +64,7 @@ public class SplashActivity extends BaseActivity implements View.OnClickListener
         view1.setBackgroundResource(R.mipmap.login_bg);
 
         list = new ArrayList<>();
-     //   list.add(view1);
+        //   list.add(view1);
         list.add(startView);
         viewPager.setAdapter(new SplashAdapter());
     }
@@ -75,7 +73,7 @@ public class SplashActivity extends BaseActivity implements View.OnClickListener
     public void onClick(View v) {
         if (v.getId() == R.id.btn_start) {
             SpManager.instance().putBoolean(SpManager.IS_STARTED, true);
-            startActivity(new Intent(this, MainActivity.class));
+            startActivity(new Intent(this, LoginActivity.class));
             finish();
         }
     }

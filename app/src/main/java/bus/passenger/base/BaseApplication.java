@@ -1,6 +1,8 @@
 package bus.passenger.base;
 
 import com.liulishuo.filedownloader.FileDownloader;
+import com.orhanobut.logger.LogLevel;
+import com.orhanobut.logger.Logger;
 import com.squareup.leakcanary.LeakCanary;
 
 import lhy.lhylibrary.base.LhyApplication;
@@ -17,6 +19,7 @@ public class BaseApplication extends LhyApplication {
     public void onCreate() {
         super.onCreate();
         initLeakCanary();
+        initLogger();
         FileDownloader.setup(this);
     }
 
@@ -26,6 +29,16 @@ public class BaseApplication extends LhyApplication {
         }
         LeakCanary.install(this);
     }
+
+
+    private void initLogger() {
+        Logger.init()
+                .methodCount(5)
+//                .hideThreadInfo()
+                .logLevel(LogLevel.FULL)
+                .methodOffset(5);
+    }
+
 
 
 }

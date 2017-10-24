@@ -40,7 +40,6 @@ dependencies {
     compile 'com.squareup.retrofit2:converter-gson:2.2.0'
     //权限管理
     compile 'com.tbruyelle.rxpermissions2:rxpermissions:0.9.3@aar'
-    compile 'com.orhanobut:logger:1.15'
     compile('com.github.ihsanbal:LoggingInterceptor:2.0.0') {
         exclude group: 'org.json', module: 'json'
     }

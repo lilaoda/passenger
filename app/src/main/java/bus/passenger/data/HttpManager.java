@@ -69,7 +69,6 @@ public class HttpManager {
 
     private LoggingInterceptor getHttpLogIntercept() {
         return new LoggingInterceptor.Builder()
-                .loggable(true)
                 .loggable(BuildConfig.DEBUG)
                 .setLevel(Level.BASIC)
                 .log(Platform.INFO)

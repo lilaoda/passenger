@@ -10,6 +10,8 @@ import android.view.ViewGroup;
 
 import com.chad.library.adapter.base.BaseQuickAdapter;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import bus.passenger.R;
@@ -27,7 +29,6 @@ import static lhy.lhylibrary.base.LhyApplication.getContext;
 /**
  * Created by Liheyu on 2017/9/26.
  * 我的行程
- *
  */
 
 public class RouteActivity extends BaseActivity implements BaseQuickAdapter.RequestLoadMoreListener,
@@ -63,9 +64,19 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
                 });
     }
 
+    private void sort(List<OrderInfo> list) {
+        Collections.sort(list, new Comparator<OrderInfo>() {
+            @Override
+            public int compare(OrderInfo o1, OrderInfo o2) {
+                return o1.getSubStatus() - o2.getSubStatus();
+            }
+        });
+    }
+
     private void refreshAdapter(List<OrderInfo> value) {
+        sort(value);
         mOrderAdapter.setNewData(value);
-      //  mOrderAdapter.disableLoadMoreIfNotFullPage(recyclerView);
+        //  mOrderAdapter.disableLoadMoreIfNotFullPage(recyclerView);
     }
 
     private void initView() {
@@ -74,11 +85,11 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
         mOrderAdapter.setEmptyView(R.layout.emptyview_route, (ViewGroup) recyclerView.getParent());
         recyclerView.setAdapter(mOrderAdapter);
         mOrderAdapter.setOnItemClickListener(this);
-       // 第一期先不做分页
-       // mOrderAdapter.setOnLoadMoreListener(this, recyclerView);
+        // 第一期先不做分页
+        // mOrderAdapter.setOnLoadMoreListener(this, recyclerView);
         refreshLayout.setOnRefreshListener(this);
         //这句要想有效果必须放在监听器之后 要想不满屏时不能上拉加载，需要放在监听器之后 然后每次刷新数据都要再调用
-      //  mOrderAdapter.disableLoadMoreIfNotFullPage(recyclerView);
+        //  mOrderAdapter.disableLoadMoreIfNotFullPage(recyclerView);
     }
 
     private void refresh(final boolean isLoadMore) {
@@ -87,14 +98,14 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
                 .subscribe(new ResultObserver<List<OrderInfo>>(true) {
                     @Override
                     public void onSuccess(List<OrderInfo> value) {
-                        if(isLoadMore){
-                            if(value==null||value.size()==0){
+                        if (isLoadMore) {
+                            if (value == null || value.size() == 0) {
                                 mOrderAdapter.loadMoreEnd();
-                            }else {
+                            } else {
                                 mOrderAdapter.addData(value);
                                 mOrderAdapter.loadMoreComplete();
                             }
-                        }else {
+                        } else {
                             refreshLayout.setRefreshing(false);
                             refreshAdapter(value);
                         }
@@ -103,9 +114,9 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
                     @Override
                     public void onFailure(Throwable e) {
                         super.onFailure(e);
-                        if(isLoadMore){
+                        if (isLoadMore) {
                             mOrderAdapter.loadMoreFail();
-                        }else {
+                        } else {
                             refreshLayout.setRefreshing(false);
                         }
                     }
@@ -120,11 +131,11 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
 
     @Override
     public void onLoadMoreRequested() {
-     //   refresh(true);
+        //   refresh(true);
     }
 
     @Override
     public void onItemClick(BaseQuickAdapter adapter, View view, int position) {
-      //  ToastUtils.showString(position+"");
+        //  ToastUtils.showString(position+"");
     }
 }

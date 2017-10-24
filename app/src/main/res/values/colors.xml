@@ -18,5 +18,6 @@
     <color name="black_narmal">#231f1f</color>
     <color name="black_press">#1b1919</color>
     <color name="common_statusbar_color">#b3b1b1</color>
+    <color name="divider">#E5E5E5</color>
 
 </resources>

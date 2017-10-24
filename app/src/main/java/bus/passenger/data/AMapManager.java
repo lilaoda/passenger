@@ -5,6 +5,10 @@ import android.content.Context;
 import com.amap.api.maps.model.LatLng;
 import com.amap.api.services.core.LatLonPoint;
 import com.amap.api.services.core.PoiItem;
+import com.amap.api.services.district.DistrictItem;
+import com.amap.api.services.district.DistrictResult;
+import com.amap.api.services.district.DistrictSearch;
+import com.amap.api.services.district.DistrictSearchQuery;
 import com.amap.api.services.geocoder.GeocodeResult;
 import com.amap.api.services.geocoder.GeocodeSearch;
 import com.amap.api.services.geocoder.RegeocodeQuery;
@@ -12,6 +16,7 @@ import com.amap.api.services.geocoder.RegeocodeResult;
 import com.amap.api.services.poisearch.PoiResult;
 import com.amap.api.services.poisearch.PoiSearch;
 import com.amap.api.services.route.RouteSearch;
+import com.orhanobut.logger.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -166,6 +171,25 @@ public class AMapManager {
         poiInfo.setProvinceName(item.getProvinceName());
         poiInfo.setAdName(item.getAdName());
         poiInfo.setSnippet(item.getSnippet());
+        poiInfo.setAdCode(item.getAdCode());
         return poiInfo;
+    }
+
+    public void getCityList() {
+        DistrictSearch search = new DistrictSearch(mContext);
+        DistrictSearchQuery query = new DistrictSearchQuery();
+        // query.setKeywords("中华人民共和国");
+        // query.setShowChild(true);
+//        search.setQuery(query);
+        search.setOnDistrictSearchListener(new DistrictSearch.OnDistrictSearchListener() {
+            @Override
+            public void onDistrictSearched(DistrictResult districtResult) {
+                ArrayList<DistrictItem> district = districtResult.getDistrict();
+                for (DistrictItem dis : district) {
+                    Logger.d(dis.getCitycode() + "_" + dis.getName());
+                }
+            }
+        });//绑定监听器
+        search.searchDistrictAsyn();//开始搜索
     }
 }

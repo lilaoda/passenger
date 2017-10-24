@@ -96,11 +96,23 @@
             android:layout_height="match_parent" />
     </LinearLayout>
 
-    <lhy.lhylibrary.view.SideLetterBar
-        android:id="@+id/letterBar"
-        android:layout_width="50dp"
+    <FrameLayout
+        android:id="@+id/ll_city"
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_gravity="right|center_vertical"
-        android:layout_marginBottom="130dp"
-        android:layout_marginTop="130dp" />
+        android:visibility="gone">
+
+        <se.emilsjolander.stickylistheaders.StickyListHeadersListView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <lhy.lhylibrary.view.SideLetterBar
+            android:id="@+id/letterBar"
+            android:layout_width="50dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="right|center_vertical"
+            android:layout_marginBottom="130dp"
+            android:layout_marginTop="130dp" />
+    </FrameLayout>
+
 </FrameLayout>

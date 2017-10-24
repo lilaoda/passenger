@@ -15,6 +15,7 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.BottomSheetDialog;
 import android.support.v7.app.AlertDialog;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -251,6 +252,7 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
                 break;
             case STATUS_IS_CALLING:
 //                resetToolBar(false);
+                textBeginTime.setText("");
                 llCallCar.setVisibility(View.GONE);
                 llCancel.setVisibility(View.VISIBLE);
                 break;
@@ -388,7 +390,7 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
                     public void onSuccess(List<OrderInfo> value) {
                         boolean showDialog = false;
                         for (OrderInfo order : value) {
-                            if (order.getMainStatus() == 2||order.getMainStatus()==1) {
+                            if (order.getMainStatus() == 2 || order.getMainStatus() == 1) {
                                 showDialog = true;
                                 break;
                             }
@@ -489,10 +491,12 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMessageEvent(OrderInfo event) {
         Log.i(TAG, "onMessageEvent: OrderInfo");
-        setPullOrderResult(false);
-        mOndoingOrder = event;
-        removeTimeTask();
-        textBeginTime.setText("已被接单\n订单编号：" + event.getOrderUuid());
+        if (TextUtils.equals(event.getOrderUuid(), mOrderUuid) && mCurrentStatus == STATUS_IS_CALLING) {
+            setPullOrderResult(false);
+            mOndoingOrder = event;
+            removeTimeTask();
+            textBeginTime.setText("已被接单\n订单编号：" + event.getOrderUuid());
+        }
     }
 
     private void cancelCallCar() {
@@ -775,7 +779,6 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
     public void onBackCallback() {
         if (mCurrentStatus == STATUS_IS_CALLING) {
 
-            //TODO 待测试
             setViewStatus(STATUS_READY_CALL);
             setPullOrderResult(false);
             mOndoingOrder = null;

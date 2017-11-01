@@ -9,17 +9,23 @@ import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.chad.library.adapter.base.BaseQuickAdapter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import bus.passenger.R;
+import bus.passenger.adapter.CityAdapter;
 import bus.passenger.adapter.SearchAdapter;
+import bus.passenger.base.Constants;
+import bus.passenger.bean.City;
 import bus.passenger.bean.PoiInfo;
 import bus.passenger.data.AMapManager;
 import bus.passenger.data.SpManager;
@@ -29,14 +35,11 @@ import butterknife.OnClick;
 import lhy.lhylibrary.base.LhyActivity;
 import lhy.lhylibrary.http.ResultObserver;
 import lhy.lhylibrary.utils.CommonUtils;
+import lhy.lhylibrary.utils.ToastUtils;
 import lhy.lhylibrary.view.SideLetterBar;
+import se.emilsjolander.stickylistheaders.StickyListHeadersListView;
 
 import static bus.passenger.utils.RxUtils.wrapAsync;
-
-/**
- * Created by Liheyu on 2017/9/18.
- * Email:liheyu999@163.com
- */
 
 public class SearchAddressActivity extends LhyActivity {
 
@@ -56,11 +59,21 @@ public class SearchAddressActivity extends LhyActivity {
     RecyclerView recyclerView;
     @BindView(R.id.letterBar)
     SideLetterBar letterBar;
+    @BindView(R.id.head_list_view)
+    StickyListHeadersListView headListView;
+    @BindView(R.id.tv_letter_overlay)
+    TextView tvLetterOverlay;
+    @BindView(R.id.rl_city)
+    RelativeLayout rlCity;
+    @BindView(R.id.ll_content)
+    LinearLayout llContent;
 
-    List<PoiInfo> mHistoryList;
+    private List<PoiInfo> mHistoryList;
     private SearchAdapter mAdapter;
-    SpManager mSpManager;
-    AMapManager mAMapManager;
+    private SpManager mSpManager;
+    private AMapManager mAMapManager;
+    private City mSelectedCity;
+    private View mClearHistoryHeadView;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -69,13 +82,14 @@ public class SearchAddressActivity extends LhyActivity {
         ButterKnife.bind(this);
         mSpManager = SpManager.instance();
         mAMapManager = AMapManager.instance();
+        initCity();
         initView();
+        initCityView();
         intListener();
     }
 
     private void intListener() {
         editInput.addTextChangedListener(new TextWatcher() {
-
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
 
@@ -93,23 +107,47 @@ public class SearchAddressActivity extends LhyActivity {
                     queryAddress(s.toString().trim());
                 } else {
                     ibtClear.setVisibility(View.GONE);
-                    mAdapter.setNewData(mHistoryList);
+                    showHistoryView();
                 }
             }
         });
     }
 
+    private void showHistoryView() {
+        mAdapter.setNewData(mHistoryList);
+        if (mHistoryList == null || mHistoryList.size() == 0) {
+            mClearHistoryHeadView.setVisibility(View.GONE);
+        }else {
+            mClearHistoryHeadView.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void showResultView(List<PoiInfo> list) {
+        mClearHistoryHeadView.setVisibility(View.GONE);
+        mAdapter.setNewData(list);
+    }
+
     private void initView() {
         LlLoading.setVisibility(View.GONE);
         textError.setVisibility(View.GONE);
-        letterBar.setVisibility(View.GONE);
-
+        rlCity.setVisibility(View.GONE);
         mHistoryList = mSpManager.getHistoryAddress();
-        mAdapter = new SearchAdapter(R.layout.item_search_address, mHistoryList);
+        mAdapter = new SearchAdapter(R.layout.item_search_address, null);
         View headView = View.inflate(this, R.layout.item_search_address_head, null);
+        mClearHistoryHeadView = View.inflate(this, R.layout.item_history_address_head, null);
+        mClearHistoryHeadView.findViewById(R.id.btn_clear_history).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mHistoryList = new ArrayList<>();
+                mSpManager.putHistoryAddress(mHistoryList);
+                showHistoryView();
+            }
+        });
         recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
         recyclerView.setAdapter(mAdapter);
         mAdapter.addHeaderView(headView);
+        mAdapter.addHeaderView(mClearHistoryHeadView);
+        mAdapter.setHeaderAndEmpty(true);
         mAdapter.setEmptyView(R.layout.item_search_address_empty, recyclerView);
         mAdapter.setOnItemClickListener(new BaseQuickAdapter.OnItemClickListener() {
             @Override
@@ -119,11 +157,30 @@ public class SearchAddressActivity extends LhyActivity {
                 setAddressResult(poiInfo);
             }
         });
+        showHistoryView();
     }
 
-    /**
-     * 保存历史搜索记录
-     */
+    //初始化城市为当前定位城市
+    private void initCity() {
+//        City selectedCity = mSpManager.getSelectedCity();
+//        if (selectedCity != null) {
+//            mSelectedCity = selectedCity;
+//        } else
+        if (getIntent().hasExtra(Constants.CITY_INFO)) {
+            PoiInfo poiInfo = getIntent().getParcelableExtra(Constants.CITY_INFO);
+            mSelectedCity = new City();
+            mSelectedCity.setAdcode(poiInfo.getAdCode());
+            mSelectedCity.setCitycode(poiInfo.getCityCode());
+            mSelectedCity.setName(poiInfo.getCityName());
+        }
+
+        if (mSelectedCity != null) {
+            textCity.setText(mSelectedCity.getName());
+        } else {
+            textCity.setText("请选择城市");
+        }
+    }
+
     private void saveSearchHistory(PoiInfo poiInfo) {
         List<PoiInfo> poiInfos = mSpManager.getHistoryAddress();
         boolean flag = false;
@@ -148,7 +205,7 @@ public class SearchAddressActivity extends LhyActivity {
         finish();
     }
 
-    @OnClick({R.id.text_cancel, R.id.ibt_clear})
+    @OnClick({R.id.text_cancel, R.id.ibt_clear, R.id.text_city, R.id.edit_input})
     public void onViewClicked(View view) {
         switch (view.getId()) {
             case R.id.text_cancel:
@@ -158,20 +215,72 @@ public class SearchAddressActivity extends LhyActivity {
             case R.id.ibt_clear:
                 editInput.setText("");
                 break;
+            case R.id.edit_input:
+                showCityView(false);
+                break;
+            case R.id.text_city:
+                showCityView(true);
+                break;
         }
     }
 
+    private void showCityView(boolean visable) {
+        if (visable) {
+            rlCity.setVisibility(View.VISIBLE);
+            llContent.setVisibility(View.GONE);
+            editInput.setClickable(true);
+            editInput.setFocusable(false);
+        } else {
+            rlCity.setVisibility(View.GONE);
+            llContent.setVisibility(View.VISIBLE);
+            editInput.setClickable(false);
+            editInput.setFocusable(true);
+            editInput.setFocusableInTouchMode(true);
+            editInput.requestFocus();
+        }
+    }
+
+    /**
+     * 城市列表 VIEW
+     */
+    private void initCityView() {
+        List<City> cityList = mAMapManager.getCityList();
+        final CityAdapter adapter = new CityAdapter(this, cityList);
+        headListView.setAdapter(adapter);
+        letterBar.setOnLetterChangedListener(new SideLetterBar.OnLetterChangedListener() {
+            @Override
+            public void onLetterChanged(String letter) {
+                int locationByLetter = adapter.getLocationByLetter(letter);
+                headListView.setSelection(locationByLetter);
+            }
+        });
+        letterBar.setOverlay(tvLetterOverlay);
+        headListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                mSelectedCity = adapter.getItem(position);
+                textCity.setText(mSelectedCity.getName());
+                showCityView(false);
+                mSpManager.putSelectedCity(mSelectedCity);
+            }
+        });
+    }
+
     private void queryAddress(String keyWord) {
+        if (mSelectedCity == null) {
+            ToastUtils.showString(getString(R.string.select_city));
+            return;
+        }
         LlLoading.setVisibility(View.VISIBLE);
         recyclerView.setVisibility(View.GONE);
-        wrapAsync(mAMapManager.search(keyWord, "", "广州")).subscribe(new ResultObserver<List<PoiInfo>>() {
+        wrapAsync(mAMapManager.search(keyWord, "", mSelectedCity.getCitycode())).subscribe(new ResultObserver<List<PoiInfo>>() {
             @Override
             public void onSuccess(List<PoiInfo> value) {
                 LlLoading.setVisibility(View.GONE);
                 recyclerView.setVisibility(View.VISIBLE);
                 if (!TextUtils.isEmpty(CommonUtils.getString(editInput))) {
                     //如果用户操作过快，输入框为空时应该显示历史内容，而此时如果网络较慢，则结果会覆盖掉历史，所以加此判断
-                    mAdapter.setNewData(value);
+                    showResultView(value);
                 }
             }
 

@@ -30,8 +30,8 @@ public abstract class ResultObserver<T> implements Observer<T> {
 
     private boolean isUserCancel = false;
     private String dialogMsg;
-    boolean isShowToast;
-    boolean isShowDialog;
+    private boolean isShowToast;
+    private boolean isShowDialog;
 
     public ResultObserver() {
     }
@@ -152,7 +152,6 @@ public abstract class ResultObserver<T> implements Observer<T> {
     public abstract void onSuccess(T value);
 
     public void onFailure(Throwable e) {
-        e.printStackTrace();
     }
 
     public void onFailure(String msg) {

@@ -8,7 +8,7 @@
         android:id="@+id/text_head"
         android:layout_width="match_parent"
         android:layout_height="35dp"
-        android:background="@android:color/darker_gray"
+        android:background="@color/gray_light_light"
         android:gravity="center_vertical"
         android:paddingLeft="15dp" />
 </LinearLayout>

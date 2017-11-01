@@ -22,4 +22,6 @@
     <string name="pwd_too_small">密码长度不能小于6位</string>
     <string name="pwd_too_long">密码长度不能大于18位</string>
     <string name="my_route">我的行程</string>
+    <string name="select_city">请选择城市</string>
+    <string name="change_passenger">换乘车人</string>
 </resources>

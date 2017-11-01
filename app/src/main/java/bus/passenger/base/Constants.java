@@ -18,6 +18,7 @@ public class Constants {
     public static final int MAP_TYPE_OTHER = 3;
 
     public static final String ORDER_INFO = "order_info";
+    public static final String CITY_INFO = "city_info";
 
 }
 

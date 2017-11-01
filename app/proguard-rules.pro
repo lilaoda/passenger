@@ -120,6 +120,7 @@ public static java.lang.String TABLENAME;
 -keep class rx.** { *; }
 
 #retrofit2
+-dontnote retrofit2.Platform
 -dontwarn retrofit2.**
 -keep class retrofit2.** { *; }
 

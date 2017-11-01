@@ -17,6 +17,15 @@ public class City {
     private String name;
     private String citycode;
     private String adcode;
+    private String letter;
+
+    public String getLetter() {
+        return letter;
+    }
+
+    public void setLetter(String letter) {
+        this.letter = letter;
+    }
 
     public String getName() {
         return name;

@@ -5,24 +5,28 @@ import android.content.Context;
 import com.amap.api.maps.model.LatLng;
 import com.amap.api.services.core.LatLonPoint;
 import com.amap.api.services.core.PoiItem;
-import com.amap.api.services.district.DistrictItem;
-import com.amap.api.services.district.DistrictResult;
-import com.amap.api.services.district.DistrictSearch;
-import com.amap.api.services.district.DistrictSearchQuery;
 import com.amap.api.services.geocoder.GeocodeResult;
 import com.amap.api.services.geocoder.GeocodeSearch;
+import com.amap.api.services.geocoder.RegeocodeAddress;
 import com.amap.api.services.geocoder.RegeocodeQuery;
 import com.amap.api.services.geocoder.RegeocodeResult;
 import com.amap.api.services.poisearch.PoiResult;
 import com.amap.api.services.poisearch.PoiSearch;
 import com.amap.api.services.route.RouteSearch;
-import com.orhanobut.logger.Logger;
+import com.github.promeg.pinyinhelper.Pinyin;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import bus.passenger.R;
 import bus.passenger.base.BaseApplication;
+import bus.passenger.bean.City;
 import bus.passenger.bean.PoiInfo;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
@@ -44,6 +48,7 @@ public class AMapManager {
 
     private static AMapManager instance;
     private Context mContext;
+    private List<City> citys;
 
 
     private AMapManager(Context context) {
@@ -122,15 +127,22 @@ public class AMapManager {
                         if (i == 1000) {//1000成功，其它为失败
                             if (regeocodeResult != null && regeocodeResult.getRegeocodeAddress() != null
                                     && regeocodeResult.getRegeocodeAddress().getFormatAddress() != null) {
-                                List<PoiItem> pois = regeocodeResult.getRegeocodeAddress().getPois();//周为点信息
+                                RegeocodeAddress regeocodeAddress = regeocodeResult.getRegeocodeAddress();
+                                List<PoiItem> pois = regeocodeAddress.getPois();//周为点信息
                                 PoiInfo poiInfo = new PoiInfo();
                                 if (pois.size() > 0) {
-                                    poiInfo = convertPoiItem(pois.get(0));
+//                                    poiInfo = convertPoiItem(pois.get(0));
+                                    //PoiItem里的城市可能为空
+                                    poiInfo.setTitle(pois.get(0).getTitle());
                                 } else {
-                                    poiInfo.setLatitude(latLng.latitude);
-                                    poiInfo.setLongitude(latLng.longitude);
-                                    poiInfo.setTitle(regeocodeResult.getRegeocodeAddress().getFormatAddress());
+                                    poiInfo.setTitle(regeocodeAddress.getFormatAddress());
                                 }
+                                poiInfo.setLatitude(latLng.latitude);
+                                poiInfo.setLongitude(latLng.longitude);
+                                poiInfo.setCityCode(regeocodeAddress.getCityCode());
+                                poiInfo.setCityName(regeocodeAddress.getCity());
+                                poiInfo.setAdCode(regeocodeAddress.getAdCode());
+                                poiInfo.setProvinceName(regeocodeAddress.getProvince());
                                 e.onNext(poiInfo);
                                 e.onComplete();
                             } else {
@@ -175,21 +187,27 @@ public class AMapManager {
         return poiInfo;
     }
 
-    public void getCityList() {
-        DistrictSearch search = new DistrictSearch(mContext);
-        DistrictSearchQuery query = new DistrictSearchQuery();
-        // query.setKeywords("中华人民共和国");
-        // query.setShowChild(true);
-//        search.setQuery(query);
-        search.setOnDistrictSearchListener(new DistrictSearch.OnDistrictSearchListener() {
-            @Override
-            public void onDistrictSearched(DistrictResult districtResult) {
-                ArrayList<DistrictItem> district = districtResult.getDistrict();
-                for (DistrictItem dis : district) {
-                    Logger.d(dis.getCitycode() + "_" + dis.getName());
-                }
+    /**
+     * 获取全市数据并进行排序
+     */
+    public List<City> getCityList() {
+        List<City> citys = new ArrayList<>();
+        try {
+            InputStream open = mContext.getAssets().open("city.json");
+            citys = new Gson().fromJson(CommonUtils.getStringfromStream(open), new TypeToken<List<City>>() {
+            }.getType());
+            for (City city : citys) {
+                city.setLetter(String.valueOf(Pinyin.toPinyin(city.getName().charAt(0)).charAt(0)));
             }
-        });//绑定监听器
-        search.searchDistrictAsyn();//开始搜索
+            Collections.sort(citys, new Comparator<City>() {
+                @Override
+                public int compare(City o1, City o2) {
+                    return o1.getLetter().charAt(0) - o2.getLetter().charAt(0);
+                }
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return citys;
     }
 }

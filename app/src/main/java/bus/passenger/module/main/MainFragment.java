@@ -49,13 +49,14 @@ import com.amap.api.services.route.DriveRouteResult;
 import com.amap.api.services.route.RideRouteResult;
 import com.amap.api.services.route.RouteSearch;
 import com.amap.api.services.route.WalkRouteResult;
-import com.orhanobut.logger.Logger;
+import com.bigkoo.pickerview.TimePickerView;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -72,11 +73,14 @@ import bus.passenger.bean.event.StartLocationEvent;
 import bus.passenger.bean.param.CallCarParam;
 import bus.passenger.bean.param.CancelCarParam;
 import bus.passenger.data.AMapManager;
+import bus.passenger.data.DbManager;
 import bus.passenger.data.HttpManager;
+import bus.passenger.data.local.entity.User;
 import bus.passenger.module.route.RouteActivity;
 import bus.passenger.overlay.AMapUtil;
 import bus.passenger.overlay.DrivingRouteOverlay;
 import bus.passenger.service.LocationService;
+import bus.passenger.utils.DialogUtis;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -89,6 +93,7 @@ import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import lhy.lhylibrary.http.ResultObserver;
 import lhy.lhylibrary.utils.CommonUtils;
+import lhy.lhylibrary.utils.DateUtils;
 import lhy.lhylibrary.utils.ImageFactory;
 import lhy.lhylibrary.utils.ToastUtils;
 import lhy.lhylibrary.view.tablayout.SegmentTabLayout;
@@ -146,6 +151,8 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
     @BindView(R.id.fl_root)
     FrameLayout flRoot;
     TextureMapView mapView;
+    @BindView(R.id.text_passenger)
+    TextView textPassenger;
 
     private PoiInfo mStartPoiInfo;//用户当前选择的起始位置
     private PoiInfo mTargetPoiInfo;//用户当前选择的目的位置
@@ -166,6 +173,8 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
     private int mTextTimeHeight;
     private String mOrderUuid;
     private AlertDialog mAlertDialog;
+    private TimePickerView mTimePickerView;
+    private User mUser;
 
     public static MainFragment newInstance() {
         Bundle args = new Bundle();
@@ -185,13 +194,18 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View mRootView = inflater.inflate(R.layout.fragment_main, null);
         mUnbinder = ButterKnife.bind(this, mRootView);
-        mHttpManager = HttpManager.instance();
-        mAMapManager = AMapManager.instance();
+        initData();
         addMapView(savedInstanceState);
         initView();
         initMap();
         initLocation();
         return mRootView;
+    }
+
+    private void initData() {
+        mHttpManager = HttpManager.instance();
+        mAMapManager = AMapManager.instance();
+        mUser = DbManager.instance().getUser();
     }
 
     private void addMapView(@Nullable Bundle savedInstanceState) {
@@ -206,6 +220,7 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
 
     private void initView() {
         setViewStatus(STATUS_SELECT_ADDRESS);
+        textPassenger.setText(mUser.getPhone());
         mTextTimeHeight = textTime.getLayoutParams().height;
         textTime.getLayoutParams().height = 0;
         textTime.requestLayout();
@@ -352,7 +367,8 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
         mAMap.addMarker(markOptiopns);
     }
 
-    @OnClick({R.id.text_start, R.id.text_end, R.id.ibtn_refresh, R.id.btn_commit, R.id.btn_cancel})
+    @OnClick({R.id.text_start, R.id.text_end, R.id.ibtn_refresh, R.id.btn_commit, R.id.btn_cancel, R.id.text_time
+            , R.id.text_change_passenger})
     public void onViewClicked(View view) {
         switch (view.getId()) {
             case R.id.text_start:
@@ -378,7 +394,14 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
                     showCancelCarDialog();
                 }
                 break;
+            case R.id.text_change_passenger:
+                changePassenger();
+                break;
         }
+    }
+
+    private void changePassenger() {
+        ToastUtils.showString("更换乘车人");
     }
 
     private void getTrip() {
@@ -524,11 +547,23 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
     }
 
     private void showTimeDialog() {
-        //显示预约时间
+        if (mTimePickerView == null) {
+            mTimePickerView = DialogUtis.createTimePickView(getActivity(), new TimePickerView.OnTimeSelectListener() {
+                @Override
+                public void onTimeSelect(Date date, View v) {
+                    textTime.setText(DateUtils.getCurrentTime(date));
+                }
+            });
+        }
+        if (!mTimePickerView.isShowing())
+            mTimePickerView.show();
     }
 
     private void startActivityForResult(int requestCityCode) {
         Intent intent = new Intent(getContext(), SearchAddressActivity.class);
+        if (mStartPoiInfo != null) {
+            intent.putExtra(Constants.CITY_INFO, mStartPoiInfo);
+        }
         startActivityForResult(intent, requestCityCode);
     }
 
@@ -574,7 +609,6 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
         } else if (requestCode == REQUEST_CITY_END) {
             isNeedLocation = false;
             mTargetPoiInfo = poiInfo;
-            Logger.d(mTargetPoiInfo);
             setViewStatus(STATUS_READY_CALL);
             textEnd.setText(mTargetPoiInfo.getTitle());
             textResult.setText("共计60大洋");

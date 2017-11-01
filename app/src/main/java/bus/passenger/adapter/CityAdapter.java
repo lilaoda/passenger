@@ -1,13 +1,12 @@
 package bus.passenger.adapter;
 
 import android.content.Context;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
-
-import com.github.promeg.pinyinhelper.Pinyin;
 
 import java.util.List;
 
@@ -15,12 +14,16 @@ import bus.passenger.R;
 import bus.passenger.bean.City;
 import se.emilsjolander.stickylistheaders.StickyListHeadersAdapter;
 
-public class CityLocationAdapter extends BaseAdapter implements StickyListHeadersAdapter {
+
+/**
+ * 全国所有城市必须先进行排序，不然不会按字母进行分组
+ */
+public class CityAdapter extends BaseAdapter implements StickyListHeadersAdapter {
 
     private List<City> mCitys;
     private LayoutInflater inflater;
 
-    public CityLocationAdapter(Context context, List<City> mCitys) {
+    public CityAdapter(Context context, List<City> mCitys) {
         this.inflater = LayoutInflater.from(context);
         this.mCitys = mCitys;
     }
@@ -31,23 +34,35 @@ public class CityLocationAdapter extends BaseAdapter implements StickyListHeader
         if (convertView == null) {
             holder = new HeaderViewHolder();
             convertView = inflater.inflate(R.layout.view_city_head, parent, false);
-            holder.text = (TextView) convertView.findViewById(R.id.text_head);
+            holder.textView = (TextView) convertView.findViewById(R.id.text_head);
             convertView.setTag(holder);
         } else {
             holder = (HeaderViewHolder) convertView.getTag();
         }
 
-        holder.text.setText(getLetter(mCitys.get(0)));
+        holder.textView.setText(mCitys.get(position).getLetter());
         return convertView;
     }
 
     @Override
     public long getHeaderId(int position) {
-        return getLetter(mCitys.get(position));
+      return mCitys.get(position).getLetter().charAt(0);
     }
 
-    private char getLetter(City city) {
-        return Pinyin.toPinyin(city.getName().charAt(0)).charAt(0);
+    /**
+     * 根据字母得到位置，
+     * @param letter
+     * @return  如果不存在返回-1
+     */
+    public int getLocationByLetter(String letter) {
+        int position = -1;
+        for (int i = 0; i < mCitys.size(); i++) {
+            if (TextUtils.equals(mCitys.get(i).getLetter(), letter)) {
+                position = i;
+                break;
+            }
+        }
+        return position;
     }
 
     @Override
@@ -56,7 +71,7 @@ public class CityLocationAdapter extends BaseAdapter implements StickyListHeader
     }
 
     @Override
-    public Object getItem(int position) {
+    public City getItem(int position) {
         return mCitys.get(position);
     }
 
@@ -68,43 +83,25 @@ public class CityLocationAdapter extends BaseAdapter implements StickyListHeader
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         ViewHolder holder;
-
         if (convertView == null) {
             holder = new ViewHolder();
             convertView = inflater.inflate(R.layout.view_city_item, parent, false);
-            holder.text = (TextView) convertView.findViewById(R.id.text_item);
+            holder.textView = (TextView) convertView.findViewById(R.id.text_item);
             convertView.setTag(holder);
         } else {
             holder = (ViewHolder) convertView.getTag();
         }
 
-        holder.text.setText(mCitys.get(position).getName());
+        holder.textView.setText(mCitys.get(position).getName());
         return convertView;
     }
 
-    /**
-     * 根据字母得到位置，
-     *
-     * @param letter
-     * @return 如果不存在返回-1
-     */
-    public int getLocationByLetter(String letter) {
-        int position = -1;
-        for (int i = 0; i < mCitys.size(); i++) {
-//            if (TextUtils.equals(mCitys.get(i).getLetter(), letter)) {
-//                position = i;
-//                break;
-//            }
-        }
-        return position;
+    static class HeaderViewHolder {
+        TextView textView;
     }
 
-    class HeaderViewHolder {
-        TextView text;
-    }
-
-    class ViewHolder {
-        TextView text;
+    static class ViewHolder {
+        TextView textView;
     }
 
 }

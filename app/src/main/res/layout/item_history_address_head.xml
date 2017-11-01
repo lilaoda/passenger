@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="50dp">
+
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="50dp"
+        android:layout_gravity="left"
+        android:layout_marginLeft="25dp"
+        android:gravity="center"
+        android:text="最近常用地址："
+        android:textColor="@color/text_666"
+        android:textSize="14sp" />
+
+    <Button
+        android:id="@+id/btn_clear_history"
+        android:layout_width="50dp"
+        android:layout_height="28dp"
+        android:layout_gravity="right|center_vertical"
+        android:layout_marginRight="10dp"
+        android:background="@drawable/selector_btn_red"
+        android:gravity="center"
+        android:text="清除"
+        android:textColor="@color/white"
+        android:textSize="12sp" />
+    <View
+        style="@style/ViewLineHorizontal"
+        android:layout_gravity="bottom" />
+</FrameLayout>

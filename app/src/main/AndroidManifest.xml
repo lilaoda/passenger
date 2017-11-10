@@ -47,6 +47,8 @@
         <activity android:name=".module.customerservice.CustomerServiceActivity" />
         <activity android:name=".module.setting.SuggestActivity" />
         <activity android:name=".module.order.OrderDetailActivity" />
+        <activity android:name=".module.setting.ChangePwdActivity" />
+        <activity android:name=".module.setting.ChangePwd2Activity" />
 
         <!--高德地图-->
         <service android:name="com.amap.api.location.APSService" />

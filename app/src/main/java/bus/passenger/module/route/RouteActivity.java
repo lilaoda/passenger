@@ -18,10 +18,12 @@ import bus.passenger.R;
 import bus.passenger.adapter.OrderListAdapter;
 import bus.passenger.base.BaseActivity;
 import bus.passenger.bean.OrderInfo;
+import bus.passenger.bean.param.PageParam;
 import bus.passenger.data.HttpManager;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import lhy.lhylibrary.http.ResultObserver;
+import lhy.lhylibrary.utils.ToastUtils;
 
 import static bus.passenger.utils.RxUtils.wrapHttp;
 import static lhy.lhylibrary.base.LhyApplication.getContext;
@@ -41,6 +43,8 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
 
     private HttpManager mHttpManager;
     private OrderListAdapter mOrderAdapter;
+    private PageParam mPageParam;
+    private int mCurrentPage =1;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -54,7 +58,10 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
     }
 
     private void getDataFormServer() {
-        wrapHttp(mHttpManager.getPassengerService().findTrip())
+        mPageParam = new PageParam();
+        mPageParam.setPageNo(1);
+        mPageParam.setPageSize(15);
+        wrapHttp(mHttpManager.getPassengerService().findTrip(mPageParam))
                 .compose(this.<List<OrderInfo>>bindToLifecycle())
                 .subscribe(new ResultObserver<List<OrderInfo>>(this, "正在加载...", true) {
                     @Override
@@ -76,7 +83,7 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
     private void refreshAdapter(List<OrderInfo> value) {
         sort(value);
         mOrderAdapter.setNewData(value);
-        //  mOrderAdapter.disableLoadMoreIfNotFullPage(recyclerView);
+        mOrderAdapter.disableLoadMoreIfNotFullPage(recyclerView);
     }
 
     private void initView() {
@@ -85,15 +92,20 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
         mOrderAdapter.setEmptyView(R.layout.emptyview_route, (ViewGroup) recyclerView.getParent());
         recyclerView.setAdapter(mOrderAdapter);
         mOrderAdapter.setOnItemClickListener(this);
-        // 第一期先不做分页
-        // mOrderAdapter.setOnLoadMoreListener(this, recyclerView);
+        mOrderAdapter.setOnLoadMoreListener(this, recyclerView);
         refreshLayout.setOnRefreshListener(this);
         //这句要想有效果必须放在监听器之后 要想不满屏时不能上拉加载，需要放在监听器之后 然后每次刷新数据都要再调用
-        //  mOrderAdapter.disableLoadMoreIfNotFullPage(recyclerView);
+        mOrderAdapter.disableLoadMoreIfNotFullPage(recyclerView);
     }
 
-    private void refresh(final boolean isLoadMore) {
-        wrapHttp(mHttpManager.getPassengerService().findTrip())
+    private void getData(final boolean isLoadMore) {
+        if(!isLoadMore){
+            mPageParam.setPageNo(1);
+        }else {
+            mPageParam.setPageNo(mCurrentPage+1);
+        }
+
+        wrapHttp(mHttpManager.getPassengerService().findTrip(mPageParam))
                 .compose(this.<List<OrderInfo>>bindToLifecycle())
                 .subscribe(new ResultObserver<List<OrderInfo>>(true) {
                     @Override
@@ -102,6 +114,7 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
                             if (value == null || value.size() == 0) {
                                 mOrderAdapter.loadMoreEnd();
                             } else {
+                                mCurrentPage++;
                                 mOrderAdapter.addData(value);
                                 mOrderAdapter.loadMoreComplete();
                             }
@@ -125,17 +138,17 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
 
     @Override
     public void onRefresh() {
-        refresh(false);
+        getData(false);
     }
 
 
     @Override
     public void onLoadMoreRequested() {
-        //   refresh(true);
+           getData(true);
     }
 
     @Override
     public void onItemClick(BaseQuickAdapter adapter, View view, int position) {
-        //  ToastUtils.showString(position+"");
+          ToastUtils.showString(position+"");
     }
 }

@@ -10,6 +10,7 @@ import bus.passenger.bean.RegisterResult;
 import bus.passenger.bean.param.CallCarParam;
 import bus.passenger.bean.param.CancelCarParam;
 import bus.passenger.bean.param.LoginParam;
+import bus.passenger.bean.param.PageParam;
 import bus.passenger.bean.param.RegistParam;
 import io.reactivex.Observable;
 import retrofit2.http.Body;
@@ -48,7 +49,7 @@ public interface PassengerService {
      * 获取行程
      */
     @POST("passenger/findTrip")
-    Observable<HttpResult<List<OrderInfo>>> findTrip();
+    Observable<HttpResult<List<OrderInfo>>> findTrip(@Body PageParam param);
 
 
 }

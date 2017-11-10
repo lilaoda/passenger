@@ -72,6 +72,7 @@ import bus.passenger.bean.event.OrderEvent;
 import bus.passenger.bean.event.StartLocationEvent;
 import bus.passenger.bean.param.CallCarParam;
 import bus.passenger.bean.param.CancelCarParam;
+import bus.passenger.bean.param.PageParam;
 import bus.passenger.data.AMapManager;
 import bus.passenger.data.DbManager;
 import bus.passenger.data.HttpManager;
@@ -406,7 +407,10 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
 
     private void getTrip() {
         //TODO 第一期主动获取订单列表 ，发现有正在进行中的订单，不让下单
-        wrapHttp(mHttpManager.getPassengerService().findTrip())
+        PageParam pageParam = new PageParam();
+        pageParam.setPageNo(1);
+        pageParam.setPageSize(15);
+        wrapHttp(mHttpManager.getPassengerService().findTrip(pageParam))
                 .compose(this.<List<OrderInfo>>bindToLifecycle())
                 .subscribe(new ResultObserver<List<OrderInfo>>(getActivity(), "正在加载...", true) {
                     @Override

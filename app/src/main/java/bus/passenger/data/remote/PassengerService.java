@@ -9,6 +9,7 @@ import bus.passenger.bean.OrderInfo;
 import bus.passenger.bean.RegisterResult;
 import bus.passenger.bean.param.CallCarParam;
 import bus.passenger.bean.param.CancelCarParam;
+import bus.passenger.bean.param.IsCancelCarParam;
 import bus.passenger.bean.param.LoginParam;
 import bus.passenger.bean.param.PageParam;
 import bus.passenger.bean.param.RegistParam;
@@ -24,7 +25,7 @@ import retrofit2.http.POST;
 
 public interface PassengerService {
 
-//    String BASE_URL = "http://192.168.8.41:8183/";
+    //    String BASE_URL = "http://192.168.8.41:8183/";
     String BASE_URL = "http://120.24.79.21:8183/";
 
     @POST("passenger/register")
@@ -50,6 +51,12 @@ public interface PassengerService {
      */
     @POST("passenger/findTrip")
     Observable<HttpResult<List<OrderInfo>>> findTrip(@Body PageParam param);
+
+    /**
+     * passenger/isCancelCar 是否可以取消叫车
+     */
+    @POST("passenger/isCancelCar")
+    Observable<HttpResult<OrderInfo>> isCancelCar(@Body IsCancelCarParam param);
 
 
 }

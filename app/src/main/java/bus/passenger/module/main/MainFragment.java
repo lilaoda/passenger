@@ -72,6 +72,7 @@ import bus.passenger.bean.event.OrderEvent;
 import bus.passenger.bean.event.StartLocationEvent;
 import bus.passenger.bean.param.CallCarParam;
 import bus.passenger.bean.param.CancelCarParam;
+import bus.passenger.bean.param.IsCancelCarParam;
 import bus.passenger.bean.param.PageParam;
 import bus.passenger.data.AMapManager;
 import bus.passenger.data.DbManager;
@@ -389,11 +390,12 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
 //                callCar();
                 break;
             case R.id.btn_cancel:
-                if (mOndoingOrder != null) {
-                    ToastUtils.showString("司机已接单，不允许取消");
-                } else {
-                    showCancelCarDialog();
-                }
+                isCanCancelCar();
+//                if (mOndoingOrder != null) {
+//                    ToastUtils.showString("司机已接单，不允许取消");
+//                } else {
+//                    showCancelCarDialog();
+//                }
                 break;
             case R.id.text_change_passenger:
                 changePassenger();
@@ -524,6 +526,18 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
             removeTimeTask();
             textBeginTime.setText("已被接单\n订单编号：" + event.getOrderUuid());
         }
+    }
+
+    private void isCanCancelCar() {
+        IsCancelCarParam param = new IsCancelCarParam();
+        param.setOrderUuid(mOrderUuid);
+        wrapHttp(mHttpManager.getPassengerService().isCancelCar(param))
+                .compose(this.<OrderInfo>bindToLifecycle())
+                .subscribe(new ResultObserver<OrderInfo>(getActivity(), "正在取消订单...", true) {
+                    @Override
+                    public void onSuccess(OrderInfo value) {
+                    }
+                });
     }
 
     private void cancelCallCar() {
@@ -816,16 +830,14 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
     //点击返回键且不是第一层时调用
     public void onBackCallback() {
         if (mCurrentStatus == STATUS_IS_CALLING) {
-
             setViewStatus(STATUS_READY_CALL);
             setPullOrderResult(false);
             mOndoingOrder = null;
             removeTimeTask();
 //            if (mOndoingOrder != null) {
-//                setViewStatus(STATUS_READY_CALL);
-//                setPullOrderResult(false);
-//            }else {
-//            showCancelCarDialog();
+//                ToastUtils.showString("司机已接单，不允许取消");
+//            } else {
+//                showCancelCarDialog();
 //            }
         } else if (mCurrentStatus == STATUS_READY_CALL) {
             setViewStatus(STATUS_SELECT_ADDRESS);

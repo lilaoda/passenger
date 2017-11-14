@@ -171,11 +171,11 @@ public class SearchAddressActivity extends LhyActivity {
             mSelectedCity = new City();
             mSelectedCity.setAdcode(poiInfo.getAdCode());
             mSelectedCity.setCitycode(poiInfo.getCityCode());
-            mSelectedCity.setName(poiInfo.getCityName());
+            mSelectedCity.setAreaName(poiInfo.getCityName());
         }
 
         if (mSelectedCity != null) {
-            textCity.setText(mSelectedCity.getName());
+            textCity.setText(mSelectedCity.getAreaName());
         } else {
             textCity.setText("请选择城市");
         }
@@ -259,7 +259,7 @@ public class SearchAddressActivity extends LhyActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 mSelectedCity = adapter.getItem(position);
-                textCity.setText(mSelectedCity.getName());
+                textCity.setText(mSelectedCity.getAreaName());
                 showCityView(false);
                 mSpManager.putSelectedCity(mSelectedCity);
             }

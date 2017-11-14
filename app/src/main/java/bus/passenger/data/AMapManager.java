@@ -197,7 +197,7 @@ public class AMapManager {
             citys = new Gson().fromJson(CommonUtils.getStringfromStream(open), new TypeToken<List<City>>() {
             }.getType());
             for (City city : citys) {
-                city.setLetter(String.valueOf(Pinyin.toPinyin(city.getName().charAt(0)).charAt(0)));
+                city.setLetter(String.valueOf(Pinyin.toPinyin(city.getAreaName().charAt(0)).charAt(0)));
             }
             Collections.sort(citys, new Comparator<City>() {
                 @Override

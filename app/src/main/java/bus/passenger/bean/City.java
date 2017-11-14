@@ -9,30 +9,42 @@ public class City {
 
 
     /**
-     * name : 北京市市辖区
-     * citycode : 10,110100
-     * adcode : 20100
+     * id : 4337
+     * areaName : 昆玉市
+     * citycode : 1903
+     * adcode : 659009
+     * latitude : 37.207994
+     * longitude : 79.287372
+     * level : city
+     * typeid : 31
+     * levelCount : 2
      */
 
-    private String name;
+    private String id;
+    private String areaName;
     private String citycode;
     private String adcode;
+    private double latitude;
+    private double longitude;
+    private String level;
+    private String typeid;
+    private String levelCount;
     private String letter;
 
-    public String getLetter() {
-        return letter;
+    public String getId() {
+        return id;
     }
 
-    public void setLetter(String letter) {
-        this.letter = letter;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public String getName() {
-        return name;
+    public String getAreaName() {
+        return areaName;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setAreaName(String areaName) {
+        this.areaName = areaName;
     }
 
     public String getCitycode() {
@@ -51,12 +63,67 @@ public class City {
         this.adcode = adcode;
     }
 
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
+    }
+
+    public double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
+    }
+
+    public String getLevel() {
+        return level;
+    }
+
+    public void setLevel(String level) {
+        this.level = level;
+    }
+
+    public String getTypeid() {
+        return typeid;
+    }
+
+    public void setTypeid(String typeid) {
+        this.typeid = typeid;
+    }
+
+    public String getLevelCount() {
+        return levelCount;
+    }
+
+    public void setLevelCount(String levelCount) {
+        this.levelCount = levelCount;
+    }
+
+    public String getLetter() {
+        return letter;
+    }
+
+    public void setLetter(String letter) {
+        this.letter = letter;
+    }
+
     @Override
     public String toString() {
         return "City{" +
-                "name='" + name + '\'' +
+                "id='" + id + '\'' +
+                ", areaName='" + areaName + '\'' +
                 ", citycode='" + citycode + '\'' +
                 ", adcode='" + adcode + '\'' +
+                ", latitude=" + latitude +
+                ", longitude=" + longitude +
+                ", level='" + level + '\'' +
+                ", typeid='" + typeid + '\'' +
+                ", levelCount='" + levelCount + '\'' +
+                ", letter='" + letter + '\'' +
                 '}';
     }
 }

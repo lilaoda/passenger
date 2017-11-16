@@ -533,9 +533,10 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
         param.setOrderUuid(mOrderUuid);
         wrapHttp(mHttpManager.getPassengerService().isCancelCar(param))
                 .compose(this.<OrderInfo>bindToLifecycle())
-                .subscribe(new ResultObserver<OrderInfo>(getActivity(), "正在取消订单...", true) {
+                .subscribe(new ResultObserver<OrderInfo>(getActivity(), "正在加载...", true) {
                     @Override
                     public void onSuccess(OrderInfo value) {
+                        cancelCallCar();
                     }
                 });
     }
@@ -629,8 +630,7 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
             mTargetPoiInfo = poiInfo;
             setViewStatus(STATUS_READY_CALL);
             textEnd.setText(mTargetPoiInfo.getTitle());
-            textResult.setText("共计60大洋");
-            setTargetMarker();
+            setStartAndTargetMarker();
         }
     }
 
@@ -671,7 +671,10 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
         mAMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(mStartPoiInfo.getLatitude(), mStartPoiInfo.getLongitude()), ZOOM_SCALE_VALUE));
     }
 
-    private void setTargetMarker() {
+    private void setStartAndTargetMarker() {
+        if (mStartPoiInfo == null) {
+            return;
+        }
         mAMap.clear();
         ArrayList<MarkerOptions> optionses = new ArrayList<MarkerOptions>();
         optionses.add(getTargetMarkerOptions());
@@ -834,11 +837,6 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
             setPullOrderResult(false);
             mOndoingOrder = null;
             removeTimeTask();
-//            if (mOndoingOrder != null) {
-//                ToastUtils.showString("司机已接单，不允许取消");
-//            } else {
-//                showCancelCarDialog();
-//            }
         } else if (mCurrentStatus == STATUS_READY_CALL) {
             setViewStatus(STATUS_SELECT_ADDRESS);
             isNeedLocation = true;

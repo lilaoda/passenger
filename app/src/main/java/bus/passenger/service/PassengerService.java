@@ -5,7 +5,6 @@ import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
@@ -14,6 +13,10 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 
+import com.amap.api.location.AMapLocation;
+import com.amap.api.location.AMapLocationClient;
+import com.amap.api.location.AMapLocationClientOption;
+import com.amap.api.location.AMapLocationListener;
 import com.orhanobut.logger.Logger;
 
 import org.greenrobot.eventbus.EventBus;
@@ -26,18 +29,22 @@ import java.util.concurrent.TimeUnit;
 import bus.passenger.R;
 import bus.passenger.base.Constants;
 import bus.passenger.bean.OrderInfo;
+import bus.passenger.bean.event.LocationEvent;
+import bus.passenger.bean.event.LocationResultEvent;
 import bus.passenger.bean.event.OrderEvent;
 import bus.passenger.data.HttpManager;
 import bus.passenger.module.order.OrderDetailActivity;
+import bus.passenger.utils.EventBusUtls;
 import io.reactivex.Flowable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
-import lhy.lhylibrary.base.LhyApplication;
 import lhy.lhylibrary.http.ResultObserver;
+import lhy.lhylibrary.service.AliveService;
 
 import static bus.passenger.utils.RxUtils.wrapHttp;
+import static lhy.lhylibrary.base.LhyApplication.getContext;
 
 
 /**
@@ -47,9 +54,15 @@ import static bus.passenger.utils.RxUtils.wrapHttp;
  * 订单服务接口 用于循环获取司机是否接单
  */
 
-public class OrderService extends Service {
+public class PassengerService extends AliveService implements AMapLocationListener {
 
-    public static final String TAG = "orderService";
+    public static final String TAG = "PassengerService";
+    //默认是北京的经纬度
+    public static double latitude = 39.904989;
+    public static double longitude = 116.405285;
+
+    private AMapLocationClient mlocationClient;
+    private boolean isNeedResult = false;
 
     /**
      * 获取推送订单的间隔
@@ -68,6 +81,7 @@ public class OrderService extends Service {
         EventBus.getDefault().register(this);
         mHttpManager = HttpManager.instance();
         initNotification();
+        initLocationClient();
     }
 
     @Nullable
@@ -78,10 +92,64 @@ public class OrderService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.i(TAG, "onStartCommand: ");
+        if (mlocationClient != null) {
+            mlocationClient.startLocation();
+        }
         return super.onStartCommand(intent, flags, startId);
     }
 
+    private void initLocationClient() {
+        mlocationClient = new AMapLocationClient(getContext());
+        AMapLocationClientOption mLocationOption = new AMapLocationClientOption();
+        mLocationOption.setNeedAddress(true);
+        //设置定位模式为高精度模式，Battery_Saving为低功耗模式，Device_Sensors是仅设备模式
+        mLocationOption.setLocationMode(AMapLocationClientOption.AMapLocationMode.Battery_Saving);
+        mLocationOption.setInterval(3000); //设置定位间隔,单位毫秒,默认为2000ms
+        mlocationClient.setLocationOption(mLocationOption);   //设置定位参数
+        mlocationClient.setLocationListener(this);
+        // 此方法为每隔固定时间会发起一次定位请求，为了减少电量消耗或网络流量消耗，
+        // 注意设置合适的定位时间的间隔（最小间隔支持为1000ms），并且在合适时间调用stopLocation()方法来取消定位请求
+        // 在定位结束后，在合适的生命周期调用onDestroy()方法
+        // 在单次定位情况下，定位无论成功与否，都无需调用stopLocation()方法移除请求，定位sdk内部会移除
+    }
+
+    @Override
+    public void onLocationChanged(AMapLocation aMapLocation) {
+        if (aMapLocation != null) {
+            Log.i(TAG, "onLocationChanged: "+aMapLocation.toStr());
+            if (aMapLocation.getErrorCode() == 0) {
+                longitude = aMapLocation.getLongitude();
+                latitude = aMapLocation.getLatitude();
+
+                if (isNeedResult) {
+                    EventBusUtls.notifyLocationResult(new LocationResultEvent(true));
+                    isNeedResult = false;
+                }
+            } else {
+                if (isNeedResult) {
+                    String errorInfo = "定位失败:" + aMapLocation.getErrorCode() + "," + aMapLocation.getErrorInfo();
+                    EventBusUtls.notifyLocationResult(new LocationResultEvent(false, errorInfo));
+                    isNeedResult = false;
+                }
+            }
+        }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMessageEvent(LocationEvent event) {
+        switch (event) {
+            case LOCATION_ENABLE:
+                mlocationClient.startLocation();
+                break;
+            case LOCATION_UNABLE:
+                mlocationClient.stopLocation();
+                break;
+            case LOCATION_REFRESH:
+                isNeedResult = true;
+                mlocationClient.startLocation();
+                break;
+        }
+    }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMessageEvent(OrderEvent event) {
@@ -122,21 +190,6 @@ public class OrderService extends Service {
             @Override
             public void onSuccess(List<OrderInfo> value) {
                 EventBus.getDefault().post(value.get(0));
-//                if (value.size() > 0) {
-//                    LhyActivity currentActivity = BaseApplication.getInstance().getCurrentActivity();
-//                    if (GlobeConstants.ORDER_STATSU == GlobeConstants.ORDER_STATSU_ONDOING || GlobeConstants.DRIVER_STATSU == GlobeConstants.DRIVER_STATSU_REST) {
-//                        return;
-//                    }
-//                    if (isBackground() || currentActivity == null || !currentActivity.isResume()) {
-//                        notifyOrder(value.get(0));
-//                    } else {
-//                        if (GlobeConstants.ORDER_STATSU == GlobeConstants.ORDER_STATSU_NO) {
-//                            if (mOrderDialog != null && mOrderDialog.isShowing() || currentActivity instanceof CaptureOrderActivity)
-//                                return;
-//                            showOrderDialog(currentActivity, value.get(0));
-//                        }
-//                    }
-//                }
             }
         });
     }
@@ -154,7 +207,7 @@ public class OrderService extends Service {
                 .setWhen(System.currentTimeMillis())
                 .setPriority(Notification.PRIORITY_MAX)
                 .setOngoing(true);
-        mNotificationManager = (NotificationManager) LhyApplication.getContext().getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager = (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
     }
 
     private void notifyOrder(OrderInfo orderInfo) {
@@ -170,6 +223,10 @@ public class OrderService extends Service {
     public void onDestroy() {
         super.onDestroy();
         EventBus.getDefault().unregister(this);
+        if (mlocationClient != null) {
+            mlocationClient.stopLocation();
+            mlocationClient.onDestroy();
+        }
         if (mOrderDialog != null) {
             mOrderDialog.dismiss();
             mOrderDialog = null;

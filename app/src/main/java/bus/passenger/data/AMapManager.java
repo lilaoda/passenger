@@ -48,20 +48,14 @@ public class AMapManager {
 
     private static AMapManager instance;
     private Context mContext;
-    private List<City> citys;
-
 
     private AMapManager(Context context) {
         mContext = context;
     }
 
-    public static synchronized AMapManager instance() {
+    public static AMapManager instance() {
         if (instance == null) {
-            synchronized (AMapManager.class) {
-                if (instance == null) {
-                    instance = new AMapManager(BaseApplication.getContext());
-                }
-            }
+            instance = new AMapManager(BaseApplication.getContext());
         }
         return instance;
     }

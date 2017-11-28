@@ -17,17 +17,12 @@ import lhy.lhylibrary.base.LhyApplication;
 import lhy.lhylibrary.http.exception.ApiException;
 import retrofit2.HttpException;
 
-/**
- * Created by Liheyu on 2017/3/6.
- * Email:liheyu999@163.com
- */
 
 public abstract class ResultObserver<T> implements Observer<T> {
 
     private Activity mActivity;
     private ProgressDialog progressDialog;
     private Disposable mDisposable;
-
     private boolean isUserCancel = false;
     private String dialogMsg;
     private boolean isShowToast;
@@ -65,7 +60,6 @@ public abstract class ResultObserver<T> implements Observer<T> {
         this.isShowDialog = true;
         this.dialogMsg = dialogMsg;
     }
-
 
     @Override
     public void onSubscribe(Disposable d) {
@@ -112,7 +106,6 @@ public abstract class ResultObserver<T> implements Observer<T> {
         onFailure(errorMsg);
     }
 
-
     @Override
     public void onComplete() {
         hideDialog();
@@ -124,7 +117,6 @@ public abstract class ResultObserver<T> implements Observer<T> {
             return;
         }
 
-        //取消这块 待测试
         if (progressDialog == null) {
             progressDialog = new ProgressDialog(mActivity);
             progressDialog.setMessage(dialogMsg);

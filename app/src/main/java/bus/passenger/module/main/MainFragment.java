@@ -6,7 +6,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.graphics.Point;
 import android.location.Location;
 import android.os.Bundle;
@@ -17,7 +16,6 @@ import android.support.design.widget.BottomSheetDialog;
 import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -41,7 +39,6 @@ import com.amap.api.maps.model.LatLngBounds;
 import com.amap.api.maps.model.Marker;
 import com.amap.api.maps.model.MarkerOptions;
 import com.amap.api.maps.model.MyLocationStyle;
-import com.amap.api.maps.model.Poi;
 import com.amap.api.services.core.AMapException;
 import com.amap.api.services.route.BusRouteResult;
 import com.amap.api.services.route.DrivePath;
@@ -67,6 +64,7 @@ import bus.passenger.bean.CallCarResult;
 import bus.passenger.bean.CancelCarResult;
 import bus.passenger.bean.OrderInfo;
 import bus.passenger.bean.PoiInfo;
+import bus.passenger.bean.event.LocationEvent;
 import bus.passenger.bean.event.LocationResultEvent;
 import bus.passenger.bean.event.OrderEvent;
 import bus.passenger.bean.event.StartLocationEvent;
@@ -78,11 +76,13 @@ import bus.passenger.data.AMapManager;
 import bus.passenger.data.DbManager;
 import bus.passenger.data.HttpManager;
 import bus.passenger.data.local.entity.User;
+import bus.passenger.module.order.OrderOngoingActivity;
 import bus.passenger.module.route.RouteActivity;
 import bus.passenger.overlay.AMapUtil;
 import bus.passenger.overlay.DrivingRouteOverlay;
-import bus.passenger.service.LocationService;
+import bus.passenger.service.PassengerService;
 import bus.passenger.utils.DialogUtis;
+import bus.passenger.utils.EventBusUtls;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -93,6 +93,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
+import lhy.lhylibrary.base.LhyFragment;
 import lhy.lhylibrary.http.ResultObserver;
 import lhy.lhylibrary.utils.CommonUtils;
 import lhy.lhylibrary.utils.DateUtils;
@@ -109,7 +110,7 @@ import static bus.passenger.utils.RxUtils.wrapHttp;
  * Email:liheyu999@163.com
  */
 
-public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListener,
+public class MainFragment  extends LhyFragment implements AMap.OnMapLoadedListener,
         AMap.OnCameraChangeListener, RouteSearch.OnRouteSearchListener, AMap.OnMyLocationChangeListener, LocationSource {
 
     public static final String TAG = "MainFragment";
@@ -211,7 +212,7 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
     }
 
     private void addMapView(@Nullable Bundle savedInstanceState) {
-        LatLng centerMyPoint = new LatLng(LocationService.latitude, LocationService.longitude);
+        LatLng centerMyPoint = new LatLng(PassengerService.latitude, PassengerService.longitude);
         AMapOptions mapOptions = new AMapOptions();
         mapOptions.camera(new CameraPosition(centerMyPoint, ZOOM_SCALE_VALUE, 0, 0));
         mapView = new TextureMapView(getContext(), mapOptions);
@@ -332,6 +333,14 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
         mAMap.getUiSettings().setZoomControlsEnabled(false);
     }
 
+    /**
+     * 移动地图到指定位置
+     */
+    public void moveMapToCurrentLocation() {
+        CameraUpdate cameraUpate = CameraUpdateFactory.newLatLngZoom(new LatLng(PassengerService.latitude, PassengerService.longitude),ZOOM_SCALE_VALUE);
+        mAMap.animateCamera(cameraUpate);
+    }
+
     private void searchPoiInfo(LatLng target) {
         wrapAsync(AMapManager.instance().search(target))
                 .compose(this.<PoiInfo>bindToLifecycle())
@@ -352,21 +361,6 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
                 .icon(BitmapDescriptorFactory.fromResource(R.drawable.purple_pin)));
         //设置Marker在屏幕上,不跟随地图移动
         mScreenMarker.setPositionByPixels(screenPosition.x, screenPosition.y);
-    }
-
-    @Override
-    public void onPOIClick(Poi poi) {
-        mAMap.clear(true);
-        MarkerOptions markOptiopns = new MarkerOptions();
-        markOptiopns.position(poi.getCoordinate());
-        TextView textView = new TextView(getContext());
-        textView.setText("到" + poi.getName() + "去");
-        textView.setTextSize(CommonUtils.dp2px(getContext(), 11));
-        textView.setGravity(Gravity.CENTER);
-        textView.setTextColor(Color.BLACK);
-        textView.setBackgroundResource(R.drawable.custom_info_bubble);
-        markOptiopns.icon(BitmapDescriptorFactory.fromView(textView));
-        mAMap.addMarker(markOptiopns);
     }
 
     @OnClick({R.id.text_start, R.id.text_end, R.id.ibtn_refresh, R.id.btn_commit, R.id.btn_cancel, R.id.text_time
@@ -401,6 +395,11 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
                 changePassenger();
                 break;
         }
+    }
+
+    //重新定位，移动到定位位置
+    public void refreshLocation() {
+        EventBusUtls.notifyLocation(LocationEvent.LOCATION_REFRESH);
     }
 
     private void changePassenger() {
@@ -521,10 +520,12 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
     public void onMessageEvent(OrderInfo event) {
         Log.i(TAG, "onMessageEvent: OrderInfo");
         if (TextUtils.equals(event.getOrderUuid(), mOrderUuid) && mCurrentStatus == STATUS_IS_CALLING) {
-            setPullOrderResult(false);
-            mOndoingOrder = event;
-            removeTimeTask();
-            textBeginTime.setText("已被接单\n订单编号：" + event.getOrderUuid());
+            startActivity(new Intent(getContext(), OrderOngoingActivity.class).putExtra(Constants.ORDER_INFO,event));
+            setViewStatus(STATUS_SELECT_ADDRESS);
+//            setPullOrderResult(false);
+//            mOndoingOrder = event;
+//            removeTimeTask();
+//            textBeginTime.setText("已被接单\n订单编号：" + event.getOrderUuid());
         }
     }
 
@@ -586,12 +587,6 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
         startActivityForResult(intent, requestCityCode);
     }
 
-    //重新定位，移动到定位位置
-    private void refreshLocation() {
-        StartLocationEvent event = new StartLocationEvent(true, true);
-        EventBus.getDefault().post(event);
-    }
-
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMessageEvent(LocationResultEvent event) {
         EventBus.getDefault().post(new StartLocationEvent(false));
@@ -602,10 +597,7 @@ public class MainFragment extends AMapFragment implements AMap.OnMapLoadedListen
         }
     }
 
-    private void moveMapToCurrentLocation() {
-        CameraUpdate cameraUpate = CameraUpdateFactory.newLatLngZoom(new LatLng(LocationService.latitude, LocationService.longitude), ZOOM_SCALE_VALUE);
-        mAMap.animateCamera(cameraUpate);
-    }
+
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {

@@ -49,11 +49,11 @@
         <activity android:name=".module.order.OrderDetailActivity" />
         <activity android:name=".module.setting.ChangePwdActivity" />
         <activity android:name=".module.setting.ChangePwd2Activity" />
+        <activity android:name=".module.order.OrderOngoingActivity" />
 
         <!--高德地图-->
         <service android:name="com.amap.api.location.APSService" />
-        <service android:name=".service.LocationService" />
-        <service android:name=".service.OrderService" />
+        <service android:name=".service.PassengerService" />
 
         <meta-data
             android:name="com.amap.api.v2.apikey"

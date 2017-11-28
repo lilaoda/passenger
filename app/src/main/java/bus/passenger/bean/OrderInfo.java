@@ -318,4 +318,33 @@ public class OrderInfo implements Parcelable {
         dest.writeInt(mainStatus);
         dest.writeInt(subStatus);
     }
+
+    @Override
+    public String toString() {
+        return "OrderInfo{" +
+                "passengerUuid='" + passengerUuid + '\'' +
+                ", orderUuid='" + orderUuid + '\'' +
+                ", actualPasNam='" + actualPasNam + '\'' +
+                ", actualPasMob='" + actualPasMob + '\'' +
+                ", actualPasNum='" + actualPasNum + '\'' +
+                ", leaveTime='" + leaveTime + '\'' +
+                ", mapType=" + mapType +
+                ", originCityUuid='" + originCityUuid + '\'' +
+                ", originBuscircleUuid='" + originBuscircleUuid + '\'' +
+                ", originLng=" + originLng +
+                ", originLat=" + originLat +
+                ", originCity='" + originCity + '\'' +
+                ", originAddress='" + originAddress + '\'' +
+                ", originDetailAddress='" + originDetailAddress + '\'' +
+                ", destCityUuid='" + destCityUuid + '\'' +
+                ", destBuscircleUuid='" + destBuscircleUuid + '\'' +
+                ", destLng=" + destLng +
+                ", destLat=" + destLat +
+                ", destCity='" + destCity + '\'' +
+                ", destAddress='" + destAddress + '\'' +
+                ", destDetailAddress='" + destDetailAddress + '\'' +
+                ", mainStatus=" + mainStatus +
+                ", subStatus=" + subStatus +
+                '}';
+    }
 }

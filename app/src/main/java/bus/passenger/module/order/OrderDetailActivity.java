@@ -25,6 +25,5 @@ public class OrderDetailActivity extends BaseActivity {
         setContentView(R.layout.activity_order_detail);
         ButterKnife.bind(this);
         initToolbar("订单详情");
-
     }
 }

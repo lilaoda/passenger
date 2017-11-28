@@ -1,5 +1,6 @@
 package bus.passenger.module.route;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -9,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.chad.library.adapter.base.BaseQuickAdapter;
+import com.orhanobut.logger.Logger;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -17,13 +19,14 @@ import java.util.List;
 import bus.passenger.R;
 import bus.passenger.adapter.OrderListAdapter;
 import bus.passenger.base.BaseActivity;
+import bus.passenger.base.Constants;
 import bus.passenger.bean.OrderInfo;
 import bus.passenger.bean.param.PageParam;
 import bus.passenger.data.HttpManager;
+import bus.passenger.module.order.OrderOngoingActivity;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import lhy.lhylibrary.http.ResultObserver;
-import lhy.lhylibrary.utils.ToastUtils;
 
 import static bus.passenger.utils.RxUtils.wrapHttp;
 import static lhy.lhylibrary.base.LhyApplication.getContext;
@@ -44,7 +47,7 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
     private HttpManager mHttpManager;
     private OrderListAdapter mOrderAdapter;
     private PageParam mPageParam;
-    private int mCurrentPage =1;
+    private int mCurrentPage = 1;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -99,10 +102,10 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
     }
 
     private void getData(final boolean isLoadMore) {
-        if(!isLoadMore){
+        if (!isLoadMore) {
             mPageParam.setPageNo(1);
-        }else {
-            mPageParam.setPageNo(mCurrentPage+1);
+        } else {
+            mPageParam.setPageNo(mCurrentPage + 1);
         }
 
         wrapHttp(mHttpManager.getPassengerService().findTrip(mPageParam))
@@ -144,11 +147,12 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
 
     @Override
     public void onLoadMoreRequested() {
-           getData(true);
+        getData(true);
     }
 
     @Override
     public void onItemClick(BaseQuickAdapter adapter, View view, int position) {
-          ToastUtils.showString(position+"");
+        Logger.d(mOrderAdapter.getData().get(position));
+        startActivity(new Intent(this, OrderOngoingActivity.class).putExtra(Constants.ORDER_INFO, mOrderAdapter.getData().get(position)));
     }
 }

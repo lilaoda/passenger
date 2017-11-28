@@ -60,14 +60,6 @@ public abstract class SinglePopup<T> extends BasePopup {
         return rootView;
     }
 
-    public List<T> getData() {
-        return mData;
-    }
-
-    public void notifyDataChanged() {
-        mAdapter.notifyDataSetChanged();
-    }
-
     protected abstract void setText(TextView textView, T item);
 
     private void initListener() {

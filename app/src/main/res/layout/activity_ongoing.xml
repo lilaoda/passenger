@@ -23,7 +23,9 @@
         <TextView
             android:id="@+id/text_des"
             android:layout_width="match_parent"
-            android:layout_height="45dp" />
+            android:layout_height="45dp"
+            android:gravity="center" />
+
         <Button
             android:id="@+id/btn_cancel"
             android:layout_width="match_parent"

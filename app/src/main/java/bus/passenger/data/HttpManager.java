@@ -9,13 +9,9 @@ import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import bus.passenger.BuildConfig;
-import bus.passenger.data.remote.PassengerService;
 import bus.passenger.data.remote.HeadIntercepter;
-import bus.passenger.data.remote.PushService;
-import lhy.lhylibrary.base.LhyApplication;
-import lhy.lhylibrary.http.interceptor.CacheIntercepter;
-import lhy.lhylibrary.utils.FileUtils;
-import okhttp3.Cache;
+import bus.passenger.data.remote.PassengerApi;
+import bus.passenger.data.remote.PushApi;
 import okhttp3.ConnectionSpec;
 import okhttp3.OkHttpClient;
 import okhttp3.internal.platform.Platform;
@@ -32,12 +28,12 @@ public class HttpManager {
 
     private static HttpManager instance;
     private Retrofit.Builder mRetrofitBuilder;
-    private PassengerService mPassengerService;
-    private PushService mPushService;
+    private PassengerApi mPassengerService;
+    private PushApi mPushService;
 
     private HttpManager() {
         mRetrofitBuilder = new Retrofit.Builder()
-                .baseUrl(PassengerService.BASE_URL)
+                .baseUrl(PassengerApi.BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create())
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                 .client(getOkHttp());
@@ -59,8 +55,8 @@ public class HttpManager {
                 .connectTimeout(CONNECTIMEOUT, TimeUnit.MILLISECONDS)
                 .readTimeout(READTIMEOUT, TimeUnit.MILLISECONDS)
                 .retryOnConnectionFailure(true)
-                .cache(new Cache(FileUtils.getCacheFile(LhyApplication.getContext(), CACHE_DIRECTORY_NAME), CACHE_MAX_SIZE))
-                .addInterceptor(new CacheIntercepter(LhyApplication.getContext()))
+//                 .cache(new Cache(FileUtils.getCacheFile(LhyApplication.getContext(), CACHE_DIRECTORY_NAME), CACHE_MAX_SIZE))
+//                .addInterceptor(new CacheIntercepter(LhyApplication.getContext()))
                 .addInterceptor(new HeadIntercepter(DbManager.instance()))
                 .addInterceptor(getHttpLogIntercept())
                 .connectionSpecs(Arrays.asList(ConnectionSpec.CLEARTEXT, ConnectionSpec.MODERN_TLS))
@@ -78,16 +74,16 @@ public class HttpManager {
                 .build();
     }
 
-    public PassengerService getPassengerService() {
+    public PassengerApi getPassengerService() {
         if (mPassengerService == null) {
-            mPassengerService = mRetrofitBuilder.build().create(PassengerService.class);
+            mPassengerService = mRetrofitBuilder.build().create(PassengerApi.class);
         }
         return mPassengerService;
     }
 
-    public PushService getPushService() {
+    public PushApi getPushService() {
         if (mPushService == null) {
-            mPushService = mRetrofitBuilder.baseUrl(PushService.BASE_URL).build().create(PushService.class);
+            mPushService = mRetrofitBuilder.baseUrl(PushApi.BASE_URL).build().create(PushApi.class);
         }
         return mPushService;
     }

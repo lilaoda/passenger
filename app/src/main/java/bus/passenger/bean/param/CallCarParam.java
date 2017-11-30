@@ -29,6 +29,11 @@ public class CallCarParam {
      */
     private String carType;
 
+    /**
+     * "yyyy-MM-dd HH:mm:ss"
+     */
+    private String appointTime;
+
     /*
      * 出发纬度
      */
@@ -193,5 +198,17 @@ public class CallCarParam {
 
     public void setTypeTime(int typeTime) {
         this.typeTime = typeTime;
+    }
+
+    public String getAppointTime() {
+        return appointTime;
+    }
+
+    public void setAppointTime(String appointTime) {
+        this.appointTime = appointTime;
+    }
+
+    public void setMapType(Integer mapType) {
+        this.mapType = mapType;
     }
 }

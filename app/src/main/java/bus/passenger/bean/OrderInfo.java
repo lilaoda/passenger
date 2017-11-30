@@ -65,6 +65,9 @@ public class OrderInfo implements Parcelable {
      */
     private int subStatus;
 
+    public OrderInfo() {
+    }
+
     protected OrderInfo(Parcel in) {
         passengerUuid = in.readString();
         orderUuid = in.readString();

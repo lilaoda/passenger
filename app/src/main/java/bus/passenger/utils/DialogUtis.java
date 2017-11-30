@@ -5,6 +5,7 @@ import android.app.Activity;
 import com.bigkoo.pickerview.TimePickerView;
 
 import java.util.Calendar;
+import java.util.Locale;
 
 /**
  * Created by Lilaoda on 2017/11/1.
@@ -15,8 +16,8 @@ public class DialogUtis {
 
     public static TimePickerView createTimePickView(Activity context, TimePickerView.OnTimeSelectListener listener) {
         //显示预约时间 显示三天之内
-        Calendar startCalendar = Calendar.getInstance();
-        Calendar endCalendar = Calendar.getInstance();
+        Calendar startCalendar = Calendar.getInstance(Locale.CHINA);
+        Calendar endCalendar = Calendar.getInstance(Locale.CHINA);
         endCalendar.add(Calendar.DAY_OF_MONTH, 2);
         return new TimePickerView.Builder(context, listener)
                 .setType(new boolean[]{false, true, true, true, true, false})// 默认全部显示

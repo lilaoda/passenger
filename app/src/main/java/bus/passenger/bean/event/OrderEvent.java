@@ -6,24 +6,49 @@ package bus.passenger.bean.event;
  * 订单事件
  */
 
-public enum OrderEvent {
+public class OrderEvent {
 
     /**
      * 循环获取订单是否被接单 可用
      */
-    PULL_RESULT_ENABLE(1),
+    public static final int PULL_ORDER_STATUS_ENABLE = 1;
     /**
      * 循环获取订单是否被接单 不可用
      */
-    PULL_RESULT_UNABLE(2);
+    public static final int PULL_ORDER_STATUS_UNABLE = 2;
 
-    private int OrderEventValue;
+    private int pullOrderStatus;
+    private String orderUuid;
 
-    OrderEvent(int locationValue) {
-        this.OrderEventValue = locationValue;
+    public OrderEvent() {
     }
 
-    public int getLocationValue() {
-        return OrderEventValue;
+    public OrderEvent(int pullOrderStatus, String orderUuid) {
+        this.pullOrderStatus = pullOrderStatus;
+        this.orderUuid = orderUuid;
+    }
+
+    public int getPullOrderStatus() {
+        return pullOrderStatus;
+    }
+
+    public void setPullOrderStatus(int pullOrderStatus) {
+        this.pullOrderStatus = pullOrderStatus;
+    }
+
+    public String getOrderUuid() {
+        return orderUuid;
+    }
+
+    public void setOrderUuid(String orderUuid) {
+        this.orderUuid = orderUuid;
+    }
+
+    @Override
+    public String toString() {
+        return "OrderEvent{" +
+                "pullOrderStatus=" + pullOrderStatus +
+                ", orderUuid='" + orderUuid + '\'' +
+                '}';
     }
 }

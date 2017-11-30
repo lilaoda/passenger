@@ -44,7 +44,7 @@ public class SplashActivity extends BaseActivity implements View.OnClickListener
         }
         setContentView(R.layout.activity_splash);
         ButterKnife.bind(this);
-        startService(new Intent(this, PassengerService.class));
+        PassengerService.start(this);
         boolean isStarted = SpManager.instance().getBoolean(SpManager.IS_STARTED);
         if (!isStarted) {
             initView();

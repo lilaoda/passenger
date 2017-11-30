@@ -12,6 +12,10 @@ import android.view.ViewGroup;
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.orhanobut.logger.Logger;
 
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -56,6 +60,7 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
         ButterKnife.bind(this);
         initToolbar(getString(R.string.my_route));
         mHttpManager = HttpManager.instance();
+        EventBus.getDefault().register(this);
         initView();
         getDataFormServer();
     }
@@ -154,5 +159,22 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
     public void onItemClick(BaseQuickAdapter adapter, View view, int position) {
         Logger.d(mOrderAdapter.getData().get(position));
         startActivity(new Intent(this, OrderOngoingActivity.class).putExtra(Constants.ORDER_INFO, mOrderAdapter.getData().get(position)));
+    }
+
+
+    /**
+     * 订单信息有改变 在订单详情，行程中的订单 对订单状态就行了更改，此时回到这个页面，需要刷新数据
+     *
+     * @param orderInfo 更改的订单信息,备用
+     */
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onEventMessage(OrderInfo orderInfo) {
+        getDataFormServer();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        EventBus.getDefault().unregister(this);
     }
 }

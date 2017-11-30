@@ -1,5 +1,6 @@
 package bus.passenger.service;
 
+import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.Notification;
@@ -29,9 +30,11 @@ import java.util.concurrent.TimeUnit;
 import bus.passenger.R;
 import bus.passenger.base.Constants;
 import bus.passenger.bean.OrderInfo;
+import bus.passenger.bean.OrderStatus;
 import bus.passenger.bean.event.LocationEvent;
 import bus.passenger.bean.event.LocationResultEvent;
 import bus.passenger.bean.event.OrderEvent;
+import bus.passenger.bean.param.OrderStatusParam;
 import bus.passenger.data.HttpManager;
 import bus.passenger.module.order.OrderDetailActivity;
 import bus.passenger.utils.EventBusUtls;
@@ -74,6 +77,13 @@ public class PassengerService extends AliveService implements AMapLocationListen
     private NotificationManager mNotificationManager;
     private HttpManager mHttpManager;
     private Disposable mOrderDisposable;
+    private Disposable mOrderStatusDisposable;
+    private String mOrderUuid;
+    private OrderStatusParam mPullOrderStatusParam;
+
+    public static void start(Activity context) {
+        context.startService(new Intent(context, PassengerService.class));
+    }
 
     @Override
     public void onCreate() {
@@ -116,7 +126,7 @@ public class PassengerService extends AliveService implements AMapLocationListen
     @Override
     public void onLocationChanged(AMapLocation aMapLocation) {
         if (aMapLocation != null) {
-            Log.i(TAG, "onLocationChanged: "+aMapLocation.toStr());
+            Log.i(TAG, "onLocationChanged: " + aMapLocation.toStr());
             if (aMapLocation.getErrorCode() == 0) {
                 longitude = aMapLocation.getLongitude();
                 latitude = aMapLocation.getLatitude();
@@ -153,14 +163,25 @@ public class PassengerService extends AliveService implements AMapLocationListen
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMessageEvent(OrderEvent event) {
-        Log.i(TAG, "onMessageEvent: OrderEvent" + event.getLocationValue());
-        switch (event) {
-            case PULL_RESULT_ENABLE:
-                startPullOrderResult();
+        Log.i(TAG, "onMessageEvent: OrderEvent" + event.toString());
+        switch (event.getPullOrderStatus()) {
+            case OrderEvent.PULL_ORDER_STATUS_ENABLE:
+                this.mOrderUuid = event.getOrderUuid();
+//                startPullOrderResult();
+                startPullOrderStatus();
                 break;
-            case PULL_RESULT_UNABLE:
-                stopPullOrderResult();
+            case OrderEvent.PULL_ORDER_STATUS_UNABLE:
+                this.mOrderUuid = "";
+                stopPullOrderStatus();
+//                stopPullOrderResult();
                 break;
+        }
+    }
+
+    private void stopPullOrderStatus() {
+        Log.i(TAG, "stopPullOrderStatus: " + "取消循环拉取订单订单状态");
+        if (mOrderStatusDisposable != null && !mOrderStatusDisposable.isDisposed()) {
+            mOrderStatusDisposable.dispose();
         }
     }
 
@@ -194,6 +215,37 @@ public class PassengerService extends AliveService implements AMapLocationListen
         });
     }
 
+    private void startPullOrderStatus() {
+        Log.i(TAG, "stopPullOrder: " + "开始循环拉取订单状态");
+        if (mOrderStatusDisposable != null && !mOrderStatusDisposable.isDisposed()) return;
+        mOrderStatusDisposable = Flowable.interval(INTERVAL_PULL_ORDER, TimeUnit.SECONDS)
+                .onBackpressureLatest()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Consumer<Long>() {
+                    @Override
+                    public void accept(@NonNull Long aLong) throws Exception {
+                        pullOrderStatus();
+                    }
+                });
+    }
+
+    private void pullOrderStatus() {
+        if (mOrderUuid.isEmpty()) {
+            return;
+        }
+//        if (mPullOrderStatusParam == null) {
+//            mPullOrderStatusParam = new OrderStatusParam();
+//        }
+//        mPullOrderStatusParam.setOrderUuid(mOrderUuid);
+        wrapHttp(mHttpManager.getPushService().pushOrderStatus(mOrderUuid)).subscribe(new ResultObserver<OrderStatus>() {
+            @Override
+            public void onSuccess(OrderStatus value) {
+                if (value != null) {
+                    EventBusUtls.notifyOrderStatus(value);
+                }
+            }
+        });
+    }
 
     //初始化通知
     private void initNotification() {

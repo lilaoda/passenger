@@ -1,10 +1,13 @@
 package bus.passenger.module.login;
 
+import android.Manifest;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.view.View;
 import android.widget.EditText;
+
+import com.tbruyelle.rxpermissions2.RxPermissions;
 
 import bus.passenger.R;
 import bus.passenger.base.BaseActivity;
@@ -17,6 +20,8 @@ import bus.passenger.module.main.MainActivity;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.functions.Consumer;
 import lhy.lhylibrary.http.ResultObserver;
 import lhy.lhylibrary.utils.CommonUtils;
 import lhy.lhylibrary.utils.StatusBarUtil;
@@ -101,9 +106,23 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
                     @Override
                     public void onSuccess(LoginResult value) {
                         saveUserInfo(value);
-                        startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                        checkPerimission();
                     }
                 });
+    }
+
+    private void checkPerimission() {
+        RxPermissions rxPermissions = new RxPermissions(this);
+        rxPermissions.request(Manifest.permission.ACCESS_FINE_LOCATION).subscribe(new Consumer<Boolean>() {
+            @Override
+            public void accept(@NonNull Boolean aBoolean) throws Exception {
+                if (aBoolean) {
+                    startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                } else {
+                    finish();
+                }
+            }
+        });
     }
 
     private void saveUserInfo(LoginResult value) {

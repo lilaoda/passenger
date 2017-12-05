@@ -67,7 +67,6 @@ import bus.passenger.bean.PoiInfo;
 import bus.passenger.bean.event.LocationEvent;
 import bus.passenger.bean.event.LocationResultEvent;
 import bus.passenger.bean.event.OrderEvent;
-import bus.passenger.bean.event.StartLocationEvent;
 import bus.passenger.bean.param.CallCarParam;
 import bus.passenger.bean.param.CancelCarParam;
 import bus.passenger.bean.param.IsCancelCarParam;
@@ -152,9 +151,9 @@ public class MainFragment extends LhyFragment implements AMap.OnMapLoadedListene
     Button btnCancel;
     @BindView(R.id.fl_root)
     FrameLayout flRoot;
-    TextureMapView mapView;
     @BindView(R.id.text_passenger)
     TextView textPassenger;
+    TextureMapView mapView;
 
     private PoiInfo mStartPoiInfo;//用户当前选择的起始位置
     private PoiInfo mTargetPoiInfo;//用户当前选择的目的位置
@@ -311,7 +310,7 @@ public class MainFragment extends LhyFragment implements AMap.OnMapLoadedListene
         if (mAMap == null) {
             mAMap = mapView.getMap();
             mAMap.setOnMapLoadedListener(this);
-            mAMap.setOnMyLocationChangeListener(this);
+         //   mAMap.setOnMyLocationChangeListener(this);
             mAMap.setOnCameraChangeListener(this);
         }
     }
@@ -587,7 +586,7 @@ public class MainFragment extends LhyFragment implements AMap.OnMapLoadedListene
      */
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMessageEvent(LocationResultEvent event) {
-        EventBus.getDefault().post(new StartLocationEvent(false));
+        EventBusUtls.notifyLocation(LocationEvent.LOCATION_UNABLE);
         if (event.isLocationSuccess()) {
             moveMapToCurrentLocation();
         } else {

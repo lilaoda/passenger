@@ -17,7 +17,6 @@ import com.amap.api.maps.model.MarkerOptions;
 import com.amap.api.maps.model.Polyline;
 import com.amap.api.maps.model.PolylineOptions;
 import com.amap.api.maps.utils.overlay.SmoothMoveMarker;
-import com.orhanobut.logger.Logger;
 
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
@@ -146,7 +145,6 @@ public class OrderOngoingrFragment extends AMapFragment {
     //订单状态改变通知
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMessageEvent(OrderStatus event) {
-        Logger.d(event);
         if (TextUtils.equals(event.getOrderUuid(), mOrderInfo.getOrderUuid()) && event.getSubStatus() > 100) {
             if (event.getLat() > 0 && event.getLng() > 0) {
                 LatLng latLng = new LatLng(event.getLat(), event.getLng());
@@ -154,7 +152,7 @@ public class OrderOngoingrFragment extends AMapFragment {
                 drawLine(latLng);
                 if (isFirst) {
                     LatLngBounds build = LatLngBounds.builder().include(latLng).include(mPassengerLatlng).build();
-                    mAMap.animateCamera(CameraUpdateFactory.newLatLngBounds(build, 100));
+                    mAMap.animateCamera(CameraUpdateFactory.newLatLngBounds(build, 150));
                     isFirst = false;
                 }
             }

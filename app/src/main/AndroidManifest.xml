@@ -19,7 +19,7 @@
     <!--这个权限用于获取wifi的获取权限，wifi信息会用来进行网络定位-->
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <!--这个权限用于允许程序在手机屏幕关闭后后台进程仍然运行-->
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
 
     <application
@@ -50,6 +50,7 @@
         <activity android:name=".module.setting.ChangePwdActivity" />
         <activity android:name=".module.setting.ChangePwd2Activity" />
         <activity android:name=".module.order.OrderOngoingActivity" />
+        <activity android:name=".wxapi.WXPayEntryActivity" />
 
         <!--高德地图-->
         <service android:name="com.amap.api.location.APSService" />

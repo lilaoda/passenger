@@ -68,7 +68,7 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
     private void getDataFormServer() {
         mPageParam = new PageParam();
         mPageParam.setPageNo(1);
-        mPageParam.setPageSize(15);
+        mPageParam.setPageSize(10);
         wrapHttp(mHttpManager.getPassengerService().findTrip(mPageParam))
                 .compose(this.<List<OrderInfo>>bindToLifecycle())
                 .subscribe(new ResultObserver<List<OrderInfo>>(this, "正在加载...", true) {
@@ -162,6 +162,8 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
     }
 
 
+    private boolean isReresh = false;
+
     /**
      * 订单信息有改变 在订单详情，行程中的订单 对订单状态就行了更改，此时回到这个页面，需要刷新数据
      *
@@ -169,7 +171,15 @@ public class RouteActivity extends BaseActivity implements BaseQuickAdapter.Requ
      */
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onEventMessage(OrderInfo orderInfo) {
-        getDataFormServer();
+        if (!isReresh) isReresh = true;
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (isReresh) {
+            getDataFormServer();
+        }
     }
 
     @Override

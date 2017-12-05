@@ -7,6 +7,11 @@ import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import com.tencent.mm.opensdk.modelpay.PayReq;
+import com.tencent.mm.opensdk.openapi.IWXAPI;
+import com.tencent.mm.opensdk.openapi.WXAPIFactory;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -57,6 +62,7 @@ public class OrderOngoingActivity extends BaseActivity {
     private OrderInfo mOrderInfo;
     private OrderOngoingrFragment mOrderOngoingrFragment;
     private HttpManager mHttpManager;
+    private IWXAPI wxapi;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -67,6 +73,7 @@ public class OrderOngoingActivity extends BaseActivity {
         initToolbar("订单详情");
         initData();
         initView();
+        registWeiPay();
     }
 
     private void initData() {
@@ -88,7 +95,7 @@ public class OrderOngoingActivity extends BaseActivity {
         int subStatus = mOrderInfo.getSubStatus();
         if (subStatus < 300) {
             showView(STATUS_CAN_CANCEL);
-        }else if (subStatus == 400) {
+        } else if (subStatus == 400) {
             showView(STATUS_PAY);
         } else {
             showView(STATUS_NORMAL);
@@ -187,8 +194,31 @@ public class OrderOngoingActivity extends BaseActivity {
         }
     }
 
+    private void registWeiPay() {
+        wxapi = WXAPIFactory.createWXAPI(getApplicationContext(), null);
+        // 将该app注册到微信
+        wxapi.registerApp("wxd930ea5d5a258f4f");
+    }
+
     private void pay() {
         ToastUtils.showString("支付宝或微信支付");
+        PayReq req = new PayReq();
+        req.appId = "wxf8b4f85f3a794e77";  // 测试用appId
+        PayReq request = new PayReq();
+        request.appId = "wxd930ea5d5a258f4f";//微信开放平台审核通过的应用APPID
+        request.partnerId = "1900000109";//微信支付分配的商户号
+        request.prepayId = "1101000000140415649af9fc314aa427";//微信返回的支付交易会话ID
+        request.packageValue = "Sign=WXPay";//暂填写固定值Sign=WXPay
+        request.nonceStr = "1101000000140429eb40476f8896f4c9";//随机字符串，不长于32位。推荐随机数生成算法
+        request.timeStamp = "1398746574";//时间戳
+        request.sign = "7FFECB600D7157C5AA49810D2D8F28BC2811827B";//签名
+        Toast.makeText(this, "正常调起支付", Toast.LENGTH_SHORT).show();
+        // 在支付之前，如果应用没有注册到微信，应该先调用IWXMsg.registerApp将应用注册到微信
+        wxapi.sendReq(req);
+        //0 成功 展示成功页面
+        //-1 错误 可能的原因：签名错误、未注册APPID、项目设置APPID不正确、注册的APPID与设置的不匹配、其他异常等。
+       // -2 用户取消 无需处理。发生场景：用户不支付了，点击取消，返回APP。
+
     }
 
     private void isCanCancelCar() {

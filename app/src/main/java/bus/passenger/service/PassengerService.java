@@ -34,7 +34,6 @@ import bus.passenger.bean.OrderStatus;
 import bus.passenger.bean.event.LocationEvent;
 import bus.passenger.bean.event.LocationResultEvent;
 import bus.passenger.bean.event.OrderEvent;
-import bus.passenger.bean.param.OrderStatusParam;
 import bus.passenger.data.HttpManager;
 import bus.passenger.module.order.OrderDetailActivity;
 import bus.passenger.utils.EventBusUtls;
@@ -64,9 +63,6 @@ public class PassengerService extends AliveService implements AMapLocationListen
     public static double latitude = 39.904989;
     public static double longitude = 116.405285;
 
-    private AMapLocationClient mlocationClient;
-    private boolean isNeedResult = false;
-
     /**
      * 获取推送订单的间隔
      */
@@ -78,8 +74,9 @@ public class PassengerService extends AliveService implements AMapLocationListen
     private HttpManager mHttpManager;
     private Disposable mOrderDisposable;
     private Disposable mOrderStatusDisposable;
+    private AMapLocationClient mlocationClient;
+    private boolean isNeedResult = false;
     private String mOrderUuid;
-    private OrderStatusParam mPullOrderStatusParam;
 
     public static void start(Activity context) {
         context.startService(new Intent(context, PassengerService.class));
@@ -92,6 +89,7 @@ public class PassengerService extends AliveService implements AMapLocationListen
         mHttpManager = HttpManager.instance();
         initNotification();
         initLocationClient();
+        mlocationClient.startLocation();
     }
 
     @Nullable
@@ -102,9 +100,6 @@ public class PassengerService extends AliveService implements AMapLocationListen
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (mlocationClient != null) {
-            mlocationClient.startLocation();
-        }
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -149,12 +144,15 @@ public class PassengerService extends AliveService implements AMapLocationListen
     public void onMessageEvent(LocationEvent event) {
         switch (event) {
             case LOCATION_ENABLE:
+                Log.i(TAG, "onMessageEvent: LOCATION_ENABLE");
                 mlocationClient.startLocation();
                 break;
             case LOCATION_UNABLE:
+                Log.i(TAG, "onMessageEvent: LOCATION_UNABLE");
                 mlocationClient.stopLocation();
                 break;
             case LOCATION_REFRESH:
+                Log.i(TAG, "onMessageEvent: LOCATION_REFRESH");
                 isNeedResult = true;
                 mlocationClient.startLocation();
                 break;

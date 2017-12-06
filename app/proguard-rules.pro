@@ -192,6 +192,11 @@ public static java.lang.String TABLENAME;
 -keep class com.amap.api.navi.**{*;}
 -keep class com.autonavi.**{*;}
 
+#腾讯支付
+-keep class com.tencent.mm.sdk.** {
+   *;
+}
+
 #-----------------------------基本指令区-------------------------------------------#
 -optimizationpasses 5
 -dontusemixedcaseclassnames

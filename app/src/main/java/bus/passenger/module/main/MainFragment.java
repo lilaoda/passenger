@@ -46,6 +46,7 @@ import com.amap.api.services.route.RideRouteResult;
 import com.amap.api.services.route.RouteSearch;
 import com.amap.api.services.route.WalkRouteResult;
 import com.bigkoo.pickerview.TimePickerView;
+import com.trello.rxlifecycle2.android.FragmentEvent;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -90,7 +91,6 @@ import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
-import io.reactivex.functions.Function;
 import lhy.lhylibrary.base.LhyFragment;
 import lhy.lhylibrary.http.ResultObserver;
 import lhy.lhylibrary.utils.CommonUtils;
@@ -236,7 +236,6 @@ public class MainFragment extends LhyFragment implements AMap.OnMapLoadedListene
                     showTimeTextView(true);
                 } else {
                     showTimeTextView(false);
-                    mSelectedTime = "";
                 }
             }
 
@@ -310,7 +309,7 @@ public class MainFragment extends LhyFragment implements AMap.OnMapLoadedListene
         if (mAMap == null) {
             mAMap = mapView.getMap();
             mAMap.setOnMapLoadedListener(this);
-         //   mAMap.setOnMyLocationChangeListener(this);
+            //   mAMap.setOnMyLocationChangeListener(this);
             mAMap.setOnCameraChangeListener(this);
         }
     }
@@ -456,12 +455,16 @@ public class MainFragment extends LhyFragment implements AMap.OnMapLoadedListene
         callCarParam.setOriginLat(mStartPoiInfo.getLatitude());
         callCarParam.setOriginLng(mStartPoiInfo.getLongitude());
         callCarParam.setOriginCityUuid("020");
-        if (TextUtils.isEmpty(mSelectedTime)) {
-            callCarParam.setTypeTime(1);//第一期全部为实时订单
+        if (tabLayout.getCurrentTab() == 0) {
+            callCarParam.setTypeTime(1);
+        } else if (TextUtils.isEmpty(mSelectedTime)) {
+            ToastUtils.showString("请选择预约时间");
+            return;
         } else {
-            callCarParam.setTypeTime(2);//第一期全部为实时订单
+            callCarParam.setTypeTime(2);
             callCarParam.setAppointTime(mSelectedTime);
         }
+
         wrapHttp(mHttpManager.getPassengerService().callCar(callCarParam))
                 .compose(this.<CallCarResult>bindToLifecycle())
                 .subscribe(new ResultObserver<CallCarResult>(getActivity(), "正在下单...", true) {
@@ -472,6 +475,7 @@ public class MainFragment extends LhyFragment implements AMap.OnMapLoadedListene
                         //叫车成功
                         setViewStatus(STATUS_IS_CALLING);
                         setPullOrderStatusEnable(true);
+                        removeTimeTask();
                         updateTimer();
                     }
                 });
@@ -480,22 +484,14 @@ public class MainFragment extends LhyFragment implements AMap.OnMapLoadedListene
     //显示下单时间
     private void updateTimer() {
         mTimeDisposable = Flowable.interval(1, TimeUnit.SECONDS)
-                .map(new Function<Long, String>() {
-                    @Override
-                    public String apply(@io.reactivex.annotations.NonNull Long aLong) throws Exception {
-                        int i = aLong.intValue();
-                        return i / 60 + "分" + i % 60 + "秒";
-                    }
-                })
                 .observeOn(AndroidSchedulers.mainThread())
-                .compose(this.<String>bindToLifecycle())
-                .subscribe(new Consumer<String>() {
+                .compose(this.<Long>bindUntilEvent(FragmentEvent.DESTROY))
+                .subscribe(new Consumer<Long>() {
                     @Override
-                    public void accept(@io.reactivex.annotations.NonNull String s) throws Exception {
-                        textBeginTime.setText(s);
+                    public void accept(Long s) throws Exception {
+                        textBeginTime.setText(s / 60 + "分" + s % 60 + "秒");
                     }
                 });
-
     }
 
     private void setPullOrderStatusEnable(boolean isEnable) {
@@ -553,6 +549,7 @@ public class MainFragment extends LhyFragment implements AMap.OnMapLoadedListene
         //移除下单计时器
         if (mTimeDisposable != null && !mTimeDisposable.isDisposed()) {
             mTimeDisposable.dispose();
+            mTimeDisposable = null;
             textBeginTime.setText("");
         }
     }
@@ -850,6 +847,7 @@ public class MainFragment extends LhyFragment implements AMap.OnMapLoadedListene
             mAlertDialog.dismiss();
             mAlertDialog = null;
         }
+        removeTimeTask();
         EventBus.getDefault().unregister(this);
         mapView.onDestroy();
     }

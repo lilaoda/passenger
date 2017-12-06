@@ -148,13 +148,14 @@ public class OrderOngoingrFragment extends AMapFragment {
         if (TextUtils.equals(event.getOrderUuid(), mOrderInfo.getOrderUuid()) && event.getSubStatus() > 100) {
             if (event.getLat() > 0 && event.getLng() > 0) {
                 LatLng latLng = new LatLng(event.getLat(), event.getLng());
-                smoothMarker(latLng);
-                drawLine(latLng);
                 if (isFirst) {
                     LatLngBounds build = LatLngBounds.builder().include(latLng).include(mPassengerLatlng).build();
                     mAMap.animateCamera(CameraUpdateFactory.newLatLngBounds(build, 150));
+                    driveList.add(latLng);
                     isFirst = false;
                 }
+                smoothMarker(latLng);
+                drawLine(latLng);
             }
         }
     }
